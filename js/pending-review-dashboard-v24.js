@@ -1,4 +1,4 @@
-import { openTrade as openClosedTrade } from './closed-trade-router.js?v=27';
+import { navigateToTrade as navigateToClosedTrade } from './closed-trade-router.js?v=28';
 
 const STATE_KEY='trading-os-state-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
@@ -11,8 +11,8 @@ function renderDashboardPending(){
   let card=page.querySelector('[data-pending-review-card-v24]');
   if(!list.length){card?.remove();return}
   if(!card){card=document.createElement('section');card.dataset.pendingReviewCardV24='1';card.className='pending-review-dashboard';const title=page.querySelector('.page-title');if(title?.nextSibling)title.parentNode.insertBefore(card,title.nextSibling);else page.prepend(card)}
-  card.innerHTML=`<div><small>Post-Trade Review</small><h3>بانتظار المراجعة: ${list.length}</h3><p>صفقات مغلقة لم تُعتمد مراجعتها الأصلية بعد.</p></div><div class="pending-review-list">${list.slice(0,5).map(t=>`<button type="button" data-open-review="${esc(t.id)}"><b>${esc(t.date||'')} · ${esc(t.instrument||'')}</b><span>${esc(t.direction||'')}</span></button>`).join('')}</div>`;
-  card.querySelectorAll('[data-open-review]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const t=list.find(x=>x.id===btn.dataset.openReview);if(t)openClosedTrade(t.id,t.date||null)},false));
+  card.innerHTML=`<div><small>Post-Trade Review</small><h3>بانتظار المراجعة: ${list.length}</h3><p>صفقات مغلقة لم تُعتمد مراجعتها الأصلية بعد.</p></div><div class="pending-review-list">${list.slice(0,5).map(t=>`<button type="button" data-open-review="${esc(t.id)}" title="فتح تفاصيل الصفقة"><b>${esc(t.instrument||'')} · ${esc(t.date||'')}</b><span>${esc(t.direction||'')}</span></button>`).join('')}</div>`;
+  card.querySelectorAll('[data-open-review]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const t=list.find(x=>x.id===btn.dataset.openReview);if(t)navigateToClosedTrade(t.id,t.date||null)},false));
 }
 function markPendingRows(){
   const pending=new Set(pendingTrades().map(t=>t.id));
