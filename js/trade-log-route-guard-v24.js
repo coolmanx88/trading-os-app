@@ -1,4 +1,4 @@
-import './closed-trade-router.js?v=24';
+import './closed-trade-router.js?v=25';
 
 const STATE_KEY='trading-os-state-v1';
 let lastOpenedId=null,lastOpenedAt=0;
@@ -19,21 +19,29 @@ function activeHashId(){
   try{return decodeURIComponent(m[1])}catch{return m[1]}
 }
 function fireClosedTrade(t){
-  if(!t||t.status!=='Closed')return;
+  if(!t||t.status!=='Closed')return false;
   const now=Date.now();
-  if(lastOpenedId===t.id&&now-lastOpenedAt<500)return;
+  if(lastOpenedId===t.id&&now-lastOpenedAt<350)return true;
   lastOpenedId=t.id;lastOpenedAt=now;
+  if(window.TradingOSClosedTrade?.ready){
+    return window.TradingOSClosedTrade.openTrade(t.id,t.date||null)!==false;
+  }
   window.dispatchEvent(new CustomEvent('trading-os-open-closed-trade',{detail:{id:t.id,date:t.date||null}}));
+  return true;
 }
-function openClosedTrade(t){
-  if(!t||t.status!=='Closed')return;
-  if(location.hash!=='#log') location.hash='#log';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>fireClosedTrade(t)));
+function openClosedTrade(t,{normalizeHash=false}={}){
+  if(!t||t.status!=='Closed')return false;
+  if(normalizeHash&&location.hash!=='#log'){
+    location.hash='#log';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>fireClosedTrade(t)));
+    return true;
+  }
+  return fireClosedTrade(t);
 }
 function guardActiveHash(){
   const id=activeHashId();if(!id)return false;
   const t=tradeById(id);if(!t||t.status!=='Closed')return false;
-  openClosedTrade(t);return true;
+  openClosedTrade(t,{normalizeHash:true});return true;
 }
 function neutralizeClosedTradeLinks(){
   const state=loadState(),closed=new Map((state.trades||[]).filter(t=>t.status==='Closed').map(t=>[t.id,t]));
@@ -50,7 +58,6 @@ function neutralizeClosedTradeLinks(){
   });
 }
 
-// Earliest possible interception: closed trades must never enter #active.
 window.addEventListener('click',e=>{
   if(e.target.closest?.('.closed-log-overlay,.doc-overlay,.modal'))return;
   const id=tradeIdFromNode(e.target);if(!id)return;
