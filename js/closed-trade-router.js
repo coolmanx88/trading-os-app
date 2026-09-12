@@ -72,7 +72,7 @@ async function hydrate(root,records){
   for(const rec of records){const wrap=root.querySelector(`[data-closed-img="${CSS.escape(rec.id)}"]`);if(!wrap)continue;const blob=await blobFor(rec);if(!blob){wrap.textContent='تعذر تحميل الصورة. تأكد من ربط GitHub على هذا الجهاز.';continue}const img=document.createElement('img');img.src=URL.createObjectURL(blob);wrap.innerHTML='';wrap.appendChild(img)}
 }
 function openTrade(id,fromDate=null){
-  const state=loadState(),t=(state.trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return;
+  const state=loadState(),t=(state.trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return false;
   if(fromDate)returnDate=fromDate;
   localStorage.removeItem(OLD_DATE_FILTER_KEY);
   const d=docOf(t),r=replayTrade(t),entry=eventOf(t,'INITIAL'),exit=eventOf(t,'CLOSE',true),review=d.reviewSnapshot||t.review||{},accounts=(t.allocations||[]).reduce((n,a)=>n+(a.accountIds?.length||0),0);
@@ -82,6 +82,7 @@ function openTrade(id,fromDate=null){
   root.querySelector('[data-closed-close]').onclick=closeOverlay;
   root.querySelector('[data-closed-back]')?.addEventListener('click',()=>openDay(returnDate));
   hydrate(root,records);
+  return true;
 }
 
 function tradeIdFromClick(target){
@@ -97,6 +98,14 @@ document.addEventListener('click',e=>{
   const t=(loadState().trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return;
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openTrade(id,t.date||null);
 },true);
+
+window.TradingOSClosedTrade={
+  openTrade:(id,date=null)=>openTrade(id,date),
+  openDay:date=>openDay(date),
+  close:()=>closeOverlay(),
+  ready:true
+};
+document.documentElement.dataset.closedTradeRouter='ready';
 
 window.addEventListener('trading-os-open-closed-day',e=>{const d=e.detail?.date;if(d)openDay(d)});
 window.addEventListener('trading-os-open-closed-trade',e=>{const id=e.detail?.id;if(id)openTrade(id,e.detail?.date||null)});
