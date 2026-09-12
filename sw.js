@@ -1,5 +1,5 @@
-const CACHE='trading-os-v17';
-const ASSETS=['./','./index.html','./assets/styles.css','./assets/analytics.css','./assets/ux-enhancements.css','./assets/equity-chart.css','./assets/trade-documentation.css','./assets/trade-ux-v2.css','./js/loader.js','./js/remote-refresh.js','./js/app.js.gz.b64','./js/engine.js','./js/store.js','./js/github-sync.js','./js/fee-ui-patch.js','./js/analytics.js','./js/equity-chart.js','./js/dashboard-calendar.js','./js/trade-documentation.js','./js/review-lock.js','./js/trade-ux-v2.js','./data/state.json'];
+const CACHE='trading-os-v18';
+const ASSETS=['./','./index.html','./assets/styles.css','./assets/analytics.css','./assets/ux-enhancements.css','./assets/equity-chart.css','./assets/trade-documentation.css','./assets/trade-ux-v2.css','./assets/closed-trade-router.css','./js/loader.js','./js/remote-refresh.js','./js/app.js.gz.b64','./js/engine.js','./js/store.js','./js/github-sync.js','./js/fee-ui-patch.js','./js/analytics.js','./js/equity-chart.js','./js/dashboard-calendar.js','./js/trade-documentation.js','./js/review-lock.js','./js/trade-ux-v2.js','./js/closed-trade-router.js','./data/state.json'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))])));
 self.addEventListener('fetch',e=>{
