@@ -130,7 +130,8 @@ function mergeStates(remote={},local={}){
 
 export async function fetchRemoteState(cfg=getGitHubConfig(), token=getToken()) {
   if(!cfg.owner || !cfg.repo || !token) throw new Error("GitHub غير مرتبط بهذا الجهاز.");
-  const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.dataPath}?ref=${encodeURIComponent(cfg.branch||"main")}`;
+  const nonce=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.dataPath}?ref=${encodeURIComponent(cfg.branch||"main")}&_=${nonce}`;
   const res=await fetchWithRetry(url,{headers:headers(token)},3,'READ');
   if(!res.ok) throw new Error(`GitHub READ failed: ${res.status}`);
   const obj=await res.json();
@@ -142,7 +143,7 @@ async function pushRemoteStateImpl(state, cfg, token, message){
   const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.dataPath}`;
   let lastError=null;
 
-  for(let attempt=1;attempt<=4;attempt++){
+  for(let attempt=1;attempt<=6;attempt++){
     const current=await fetchRemoteState(cfg,token);
     const merged=mergeStates(current.state,state);
     const body={message,content:utf8ToBase64(JSON.stringify(merged,null,2)),sha:current.sha,branch:cfg.branch||"main"};
@@ -154,7 +155,7 @@ async function pushRemoteStateImpl(state, cfg, token, message){
     const text=await res.text();
     lastError=new Error(`GitHub WRITE failed: ${res.status} ${text.slice(0,240)}`);
     if(res.status!==409) throw lastError;
-    await sleep(150*attempt);
+    await sleep(250*attempt + Math.floor(Math.random()*250));
   }
   throw lastError || new Error("GitHub WRITE failed after conflict retries.");
 }
@@ -172,12 +173,13 @@ export async function testConnection(cfg=getGitHubConfig(), token=getToken()) {
 
 export async function fetchRepoFile(path, cfg=getGitHubConfig(), token=getToken()) {
   if(!cfg.owner || !cfg.repo || !token) throw new Error("GitHub غير مرتبط بهذا الجهاز.");
-  const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path}?ref=${encodeURIComponent(cfg.branch||"main")}`;
+  const nonce=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path}?ref=${encodeURIComponent(cfg.branch||"main")}&_=${nonce}`;
   const res=await fetchWithRetry(url,{headers:headers(token)},3,'FILE READ');
   if(!res.ok) throw new Error(`GitHub FILE READ failed: ${res.status}`);
   const obj=await res.json();
   const clean=(obj.content||"").replace(/\n/g,"");
   const binary=atob(clean); const bytes=new Uint8Array(binary.length);
-  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  for(let i=0;i<bin.length;i++) bytes[i]=binary.charCodeAt(i);
   return {bytes,name:path.split('/').pop(),sha:obj.sha};
 }
