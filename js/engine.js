@@ -47,14 +47,19 @@ export function replayTrade(trade) {
   const cfg = INSTRUMENTS[trade.instrument];
   let qty = 0;
   let avgEntry = 0;
-  let realizedPerAccount = 0;
+  let grossRealizedPerAccount = 0;
+  let commissionPerAccount = 0;
+  let realizedPerAccount = 0; // Net P&L after buffer/commission costs
   let currentStopPrice = Number(trade.stopPrice || 0);
   const timeline = [];
+  const bufferPoints = Math.max(0, Number(trade.bufferPoints || 0));
 
   const events = [...(trade.events || [])].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
   for (const ev of events) {
     const q = Number(ev.qtyPerAccount || 0);
     const price = Number(ev.price || 0);
+    let eventGross = 0;
+    let eventCommission = 0;
     let eventRealized = 0;
 
     if (["INITIAL","ADD"].includes(ev.type)) {
@@ -66,7 +71,11 @@ export function replayTrade(trade) {
     } else if (["REDUCE","CLOSE"].includes(ev.type)) {
       const closeQty = Math.min(q, qty);
       const points = trade.direction === "LONG" ? price - avgEntry : avgEntry - price;
-      eventRealized = points * closeQty * cfg.pointValue;
+      eventGross = points * closeQty * cfg.pointValue;
+      eventCommission = bufferPoints * closeQty * cfg.pointValue;
+      eventRealized = eventGross - eventCommission;
+      grossRealizedPerAccount += eventGross;
+      commissionPerAccount += eventCommission;
       realizedPerAccount += eventRealized;
       qty -= closeQty;
       if (qty <= 0) { qty = 0; avgEntry = 0; }
@@ -87,9 +96,13 @@ export function replayTrade(trade) {
 
     timeline.push({
       ...ev,
+      eventGross,
+      eventCommission,
       eventRealized,
       qtyAfter: qty,
       avgEntryAfter: avgEntry,
+      grossRealizedAfter: grossRealizedPerAccount,
+      commissionAfter: commissionPerAccount,
       realizedAfter: realizedPerAccount,
       remainingGoalAfter: target.remainingGoal,
       targetPriceAfter: target.targetPrice,
@@ -111,8 +124,14 @@ export function replayTrade(trade) {
   const risk = riskMetrics({instrument:trade.instrument,direction:trade.direction,qty,avgEntry,stopPrice:currentStopPrice,targetPrice:target.targetPrice});
   const accountCount = (trade.allocations || []).reduce((s,a)=>s + Number(a.accountIds?.length || a.accountCount || 0),0);
   return {
-    qty, avgEntry, realizedPerAccount, timeline, target, risk,
+    qty, avgEntry,
+    grossRealizedPerAccount,
+    commissionPerAccount,
+    realizedPerAccount,
+    timeline, target, risk,
     accountCount,
+    portfolioGrossRealized: grossRealizedPerAccount * accountCount,
+    portfolioCommission: commissionPerAccount * accountCount,
     portfolioRealized: realizedPerAccount * accountCount,
     portfolioTarget: trade.targetPerAccount * accountCount,
     portfolioRisk: risk.riskPerAccount * accountCount,
