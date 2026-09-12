@@ -180,6 +180,6 @@ export async function fetchRepoFile(path, cfg=getGitHubConfig(), token=getToken(
   const obj=await res.json();
   const clean=(obj.content||"").replace(/\n/g,"");
   const binary=atob(clean); const bytes=new Uint8Array(binary.length);
-  for(let i=0;i<bin.length;i++) bytes[i]=binary.charCodeAt(i);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
   return {bytes,name:path.split('/').pop(),sha:obj.sha};
 }
