@@ -1,4 +1,7 @@
+import { refreshFromRemoteIfNewer } from './remote-refresh.js';
+
 async function bootTradingOS(){
+  await refreshFromRemoteIfNewer();
   const res = await fetch('./js/app.js.gz.b64', {cache:'no-store'});
   if(!res.ok) throw new Error(`App bundle load failed: ${res.status}`);
   const b64 = (await res.text()).trim();
