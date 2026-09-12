@@ -1,0 +1,28 @@
+/* Trading OS UX enhancements — RTL shell, larger analytics heatmap, dashboard P&L calendar */
+
+/* CSS Grid line numbering follows direction. Force physical grid LTR, then restore RTL inside panels. */
+.app-shell{direction:ltr!important;grid-template-columns:1fr 235px!important}
+.sidebar{direction:rtl!important;grid-column:2!important;border-left:1px solid var(--line)!important;border-right:0!important}
+.main{direction:rtl!important;grid-column:1!important}
+
+/* Heatmap readability */
+.an-heat{gap:10px!important}
+.an-heat>div{min-height:92px!important;padding:12px 8px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;gap:7px!important}
+.an-heat b{font-size:20px!important;line-height:1.1!important}
+.an-heat span{font-size:18px!important;line-height:1.3!important;font-weight:650!important;color:#b7c4d2!important}
+
+/* Dashboard P&L calendar */
+.pnl-calendar-shell{margin-top:18px;background:linear-gradient(180deg,#0e151d,#0b1219);border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:var(--shadow)}
+.pnl-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;direction:rtl}
+.pnl-calendar-title h3{margin:0;font-size:18px}.pnl-calendar-title p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.pnl-calendar-nav{display:flex;align-items:center;gap:8px;direction:ltr}.pnl-calendar-nav button{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#111923;color:var(--text);cursor:pointer;font-size:18px}.pnl-calendar-nav strong{min-width:145px;text-align:center;font-size:14px}
+.pnl-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) 145px;gap:12px;direction:ltr;align-items:stretch}
+.pnl-calendar-main{min-width:0}
+.pnl-cal-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}.pnl-cal-weekdays div{text-align:center;color:var(--muted);font-size:12px;font-weight:700;padding:5px 0}
+.pnl-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(86px,1fr));gap:6px}
+.pnl-day{position:relative;border:1px solid #223142;border-radius:10px;background:#0d141c;padding:8px;min-width:0;overflow:hidden;direction:ltr;text-align:left}.pnl-day.outside{opacity:.34}.pnl-day.today{outline:1px solid #5aa7ff;outline-offset:-2px}.pnl-day.win{background:linear-gradient(145deg,#0d251d,#092018);border-color:#174e3b}.pnl-day.loss{background:linear-gradient(145deg,#281015,#200c10);border-color:#5b2430}.pnl-day.flat{background:#111821}
+.pnl-day-num{font-size:11px;color:#8999aa;font-weight:700}.pnl-day-pnl{margin-top:13px;font-size:17px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pnl-day.win .pnl-day-pnl{color:#55e2a9}.pnl-day.loss .pnl-day-pnl{color:#ff7f8d}.pnl-day-meta{font-size:10px;color:#8797a8;margin-top:5px}
+.pnl-weekly{display:grid;grid-template-rows:24px repeat(6,minmax(86px,1fr));gap:6px}.pnl-weekly-label{display:grid;place-items:center;color:var(--muted);font-size:11px;font-weight:750}.pnl-week{border:1px solid #273646;border-radius:10px;background:#111922;padding:10px 8px;display:flex;flex-direction:column;justify-content:center;direction:ltr;text-align:left}.pnl-week.win{background:#10291f;border-color:#1e5943}.pnl-week.loss{background:#2a1117;border-color:#622b36}.pnl-week b{font-size:16px}.pnl-week.win b{color:#55e2a9}.pnl-week.loss b{color:#ff7f8d}.pnl-week span{font-size:10px;color:#8797a8;margin-top:4px}
+
+@media(max-width:1200px){.an-heat b{font-size:18px!important}.an-heat span{font-size:16px!important}.pnl-calendar-layout{grid-template-columns:minmax(0,1fr) 120px}.pnl-cal-grid{grid-template-rows:repeat(6,minmax(78px,1fr))}.pnl-weekly{grid-template-rows:24px repeat(6,minmax(78px,1fr))}}
+@media(max-width:760px){.app-shell{display:block!important;direction:rtl!important}.pnl-calendar-layout{grid-template-columns:1fr}.pnl-weekly{display:none}.pnl-cal-grid{overflow-x:auto;grid-template-columns:repeat(7,minmax(100px,1fr))}.pnl-cal-weekdays{grid-template-columns:repeat(7,minmax(100px,1fr));overflow:hidden}.an-heat b{font-size:18px!important}.an-heat span{font-size:15px!important}}
