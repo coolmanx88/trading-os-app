@@ -1,7 +1,6 @@
 import { replayTrade } from './engine.js';
 
 const STATE_KEY='trading-os-state-v1';
-const DATE_FILTER_KEY='trading-os-trade-log-date-filter';
 let view=new Date();
 view=new Date(Date.UTC(view.getUTCFullYear(),view.getUTCMonth(),1));
 
@@ -46,14 +45,10 @@ function dayCell(d,currentMonth,map){
   const k=keyUTC(d),x=map.get(k)||{pnl:0,trades:0},outside=d.getUTCMonth()!==currentMonth;
   const now=new Date(),today=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const cls=x.trades?(x.pnl>0?'win':x.pnl<0?'loss':'flat'):'';
-  return `<div class="pnl-day ${outside?'outside':''} ${k===today?'today':''} ${cls}" data-cal-date="${k}" title="Open trades for ${k}"><div class="pnl-day-num">${pad(d.getUTCDate())}</div>${x.trades?`<div class="pnl-day-pnl">${money(x.pnl)}</div><div class="pnl-day-meta">${x.trades} ${x.trades===1?'trade':'trades'}</div>`:''}</div>`;
+  return `<div class="pnl-day ${outside?'outside':''} ${k===today?'today':''} ${cls}" data-cal-date="${k}" title="عرض الصفقات المغلقة ليوم ${k}"><div class="pnl-day-num">${pad(d.getUTCDate())}</div>${x.trades?`<div class="pnl-day-pnl">${money(x.pnl)}</div><div class="pnl-day-meta">${x.trades} ${x.trades===1?'trade':'trades'}</div>`:''}</div>`;
 }
 function openTradeDay(date){
-  localStorage.setItem(DATE_FILTER_KEY,date);
-  window.dispatchEvent(new CustomEvent('trading-os-open-trade-date',{detail:{date}}));
-  const nav=[...document.querySelectorAll('.nav a,.nav button,.sidebar a,.sidebar button,[data-route]')].find(el=>/trade\s*log|trading\s*log|سجل\s*التداول|سجل\s*الصفقات|الصفقات/i.test((el.textContent||'').trim()));
-  if(nav){nav.click();return}
-  location.hash='#trades';
+  window.dispatchEvent(new CustomEvent('trading-os-open-closed-day',{detail:{date}}));
 }
 function render(){
   if((location.hash||'#dashboard').slice(1).split('?')[0]!=='dashboard')return;
@@ -68,7 +63,7 @@ function render(){
   root.dataset.signature=signature;
   root.innerHTML=`
     <div class="pnl-calendar-head">
-      <div class="pnl-calendar-title"><h3>P&L Calendar</h3><p>Net Portfolio P&L · Master Trades count · اضغط على أي يوم لعرض سجلاته</p></div>
+      <div class="pnl-calendar-title"><h3>P&L Calendar</h3><p>Net Portfolio P&L · Master Trades count · اضغط على يوم لعرض الصفقات المغلقة لذلك اليوم</p></div>
       <div class="pnl-calendar-nav"><button data-cal-prev aria-label="Previous month">‹</button><strong>${monthName(view)}</strong><button data-cal-next aria-label="Next month">›</button></div>
     </div>
     <div class="pnl-calendar-layout">
