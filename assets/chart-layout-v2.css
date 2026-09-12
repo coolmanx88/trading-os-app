@@ -1,0 +1,80 @@
+/* Full-width stacked trade charts — Closed Trade Detail + Documentation */
+.closed-log-inner,
+.doc-overlay-inner{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  padding-left:clamp(12px,1.5vw,28px)!important;
+  padding-right:clamp(12px,1.5vw,28px)!important;
+}
+
+.closed-charts,
+.doc-charts{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:20px!important;
+  width:100%!important;
+}
+
+.closed-charts > *,
+.doc-charts > *{
+  grid-column:1 / -1!important;
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+
+.closed-chart,
+.doc-panel{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+
+.closed-chart-img,
+.doc-image-wrap{
+  width:100%!important;
+  min-height:clamp(280px,32vw,650px)!important;
+  height:auto!important;
+  box-sizing:border-box!important;
+  padding:10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+
+.closed-chart-img img,
+.doc-image-wrap img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  margin:0 auto!important;
+}
+
+.closed-chart-add img,
+.doc-chart-addendum img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  margin-top:8px!important;
+}
+
+@media(max-width:760px){
+  .closed-chart-img,
+  .doc-image-wrap{
+    min-height:220px!important;
+    padding:6px!important;
+  }
+  .closed-charts,
+  .doc-charts{
+    gap:14px!important;
+  }
+}
