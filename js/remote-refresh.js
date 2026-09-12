@@ -1,4 +1,4 @@
-import { getToken, fetchRemoteState } from './github-sync.js';
+import { getToken, fetchRemoteState } from './github-sync.js?v=23';
 
 const STATE_KEY = 'trading-os-state-v1';
 
@@ -19,8 +19,6 @@ export async function refreshFromRemoteIfNewer(){
 
     const remoteUpdated = ts(remoteState.meta?.updatedAt);
     const localUpdated = ts(localState?.meta?.updatedAt);
-
-    // Only replace local data when GitHub is strictly newer. This protects newer unsynced browser edits.
     if(!localState || remoteUpdated > localUpdated){
       localStorage.setItem(STATE_KEY, JSON.stringify(remoteState));
       return {updated:true,remoteUpdated,localUpdated};
