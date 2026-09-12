@@ -1,6 +1,6 @@
 export const INSTRUMENTS = {
-  MNQ: { pointValue: 2, tickSize: 0.25 },
-  NQ: { pointValue: 20, tickSize: 0.25 }
+  MNQ: { pointValue: 2, tickSize: 0.25, feePerContractSide: 0.95 },
+  NQ: { pointValue: 20, tickSize: 0.25, feePerContractSide: 0 }
 };
 
 export const ACCOUNT_SIZES = [50,100,150,200,250,300,400];
@@ -49,10 +49,11 @@ export function replayTrade(trade) {
   let avgEntry = 0;
   let grossRealizedPerAccount = 0;
   let commissionPerAccount = 0;
-  let realizedPerAccount = 0; // Net P&L after buffer/commission costs
+  let realizedPerAccount = 0; // Net P&L after actual fees
   let currentStopPrice = Number(trade.stopPrice || 0);
   const timeline = [];
-  const bufferPoints = Math.max(0, Number(trade.bufferPoints || 0));
+  // Buffer points are only for target planning. Fees are independent.
+  const feePerContractSide = Math.max(0, Number(trade.feePerContractSide ?? cfg?.feePerContractSide ?? 0));
 
   const events = [...(trade.events || [])].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
   for (const ev of events) {
@@ -72,7 +73,7 @@ export function replayTrade(trade) {
       const closeQty = Math.min(q, qty);
       const points = trade.direction === "LONG" ? price - avgEntry : avgEntry - price;
       eventGross = points * closeQty * cfg.pointValue;
-      eventCommission = bufferPoints * closeQty * cfg.pointValue;
+      eventCommission = feePerContractSide * closeQty * 2; // entry + exit execution sides
       eventRealized = eventGross - eventCommission;
       grossRealizedPerAccount += eventGross;
       commissionPerAccount += eventCommission;
