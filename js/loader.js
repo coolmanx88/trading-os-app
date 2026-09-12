@@ -1,8 +1,10 @@
-import { refreshFromRemoteIfNewer } from './remote-refresh.js';
+import { refreshFromRemoteIfNewer } from './remote-refresh.js?v=23';
+
+const APP_VERSION='23';
 
 async function bootTradingOS(){
   await refreshFromRemoteIfNewer();
-  const res = await fetch('./js/app.js.gz.b64', {cache:'no-store'});
+  const res = await fetch(`./js/app.js.gz.b64?v=${APP_VERSION}`, {cache:'reload'});
   if(!res.ok) throw new Error(`App bundle load failed: ${res.status}`);
   const b64 = (await res.text()).trim();
   const binary = atob(b64);
@@ -13,9 +15,9 @@ async function bootTradingOS(){
   let code = await new Response(stream).text();
   const base = new URL('./js/', location.href);
   code = code
-    .replace('from "./engine.js"', `from "${new URL('engine.js', base).href}"`)
-    .replace('from "./store.js"', `from "${new URL('store.js', base).href}"`)
-    .replace('from "./github-sync.js"', `from "${new URL('github-sync.js', base).href}"`);
+    .replace('from "./engine.js"', `from "${new URL(`engine.js?v=${APP_VERSION}`, base).href}"`)
+    .replace('from "./store.js"', `from "${new URL(`store.js?v=${APP_VERSION}`, base).href}"`)
+    .replace('from "./github-sync.js"', `from "${new URL(`github-sync.js?v=${APP_VERSION}`, base).href}"`);
   const url = URL.createObjectURL(new Blob([code], {type:'text/javascript'}));
   try { await import(url); }
   finally { setTimeout(()=>URL.revokeObjectURL(url), 1000); }
