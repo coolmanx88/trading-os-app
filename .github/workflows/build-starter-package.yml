@@ -1,0 +1,61 @@
+name: Build Trading OS Starter Package
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'starter-kit/**'
+      - 'index.html'
+      - 'assets/**'
+      - 'js/**'
+      - 'data/state.json'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - '.nojekyll'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/build-starter-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare clean starter package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="package/Trading-OS-Starter"
+          APP="$ROOT/01-trading-os-app"
+          mkdir -p "$APP"
+
+          rsync -a ./ "$APP/" \
+            --exclude '.git/' \
+            --exclude 'starter-kit/' \
+            --exclude 'package/' \
+            --exclude '.github/workflows/build-starter-package.yml'
+
+          cp -a starter-kit/. "$ROOT/"
+
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('package/Trading-OS-Starter/01-trading-os-app/js/github-sync.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('owner: "coolmanx88"', 'owner: "YOUR_GITHUB_USERNAME"')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          cd package
+          zip -qr Trading-OS-Starter.zip Trading-OS-Starter
+
+      - name: Upload starter ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trading-OS-Starter
+          path: package/Trading-OS-Starter.zip
+          if-no-files-found: error
+          retention-days: 30
