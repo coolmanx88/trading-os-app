@@ -5,7 +5,7 @@ const STATE_KEY='trading-os-state-v1';
 const OLD_DATE_FILTER_KEY='trading-os-trade-log-date-filter';
 const DB_NAME='trading-os-trade-docs-v1';
 const STORE='blobs';
-let dbPromise=null, overlay=null, returnDate=null;
+let dbPromise=null, overlay=null, returnDate=null, previousHash='#dashboard', routeOwned=false;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
 const money=n=>`${Number(n||0)<0?'-':''}$${Math.abs(Number(n||0)).toLocaleString('en-US',{maximumFractionDigits:2})}`;
@@ -52,7 +52,14 @@ function ensureOverlay(){
   if(overlay&&document.body.contains(overlay))return overlay;
   overlay=document.createElement('div');overlay.className='closed-log-overlay';overlay.innerHTML='<div class="closed-log-inner"></div>';document.body.appendChild(overlay);return overlay;
 }
-function closeOverlay(){overlay?.remove();overlay=null;returnDate=null}
+function destroyOverlay(){overlay?.remove();overlay=null;returnDate=null;routeOwned=false}
+function closeOverlay(){
+  if(routeOwned && /^#closed-trade\?/i.test(location.hash)){
+    location.hash=previousHash||'#dashboard';
+    return;
+  }
+  destroyOverlay();
+}
 function header(title,sub,back=false){return `<div class="closed-log-top"><div><h2>${esc(title)}</h2><p>${esc(sub)}</p></div><div class="closed-log-actions">${back?'<button type="button" data-closed-back>← رجوع للسجل اليومي</button>':''}<button type="button" data-closed-close>إغلاق</button></div></div>`}
 
 export function openDay(date){
@@ -62,7 +69,7 @@ export function openDay(date){
   const total=trades.reduce((n,t)=>n+Number(replayTrade(t).portfolioRealized||0),0),o=ensureOverlay(),root=o.querySelector('.closed-log-inner');
   root.innerHTML=`${header(`سجل الصفقات المغلقة — ${dateTitle(date)}`,`${trades.length} ${trades.length===1?'صفقة':'صفقات'} · Portfolio P&L ${money(total)}`)}<div class="closed-day-summary"><div><small>التاريخ</small><b>${esc(date)}</b></div><div><small>Closed Trades</small><b>${trades.length}</b></div><div><small>Portfolio P&L</small><b class="${total>=0?'pos':'neg'}">${money(total)}</b></div></div><div class="closed-day-list">${trades.map(t=>{const r=replayTrade(t),d=docOf(t);return `<article class="closed-day-trade" data-closed-trade="${esc(t.id)}"><div><h3>${esc(t.instrument)} ${esc(t.direction)}</h3><p>${esc(t.id)} · ${esc(nyDate(t.actualEntryAt||eventOf(t,'INITIAL')?.actualTimestamp||eventOf(t,'INITIAL')?.timestamp))}</p><div class="closed-day-badges"><span>${d.charts.entry?'Entry ✓':'Entry مفقود'}</span><span>${d.charts.exit?'Exit ✓':'Exit مفقود'}</span>${d.importantNotes.length?`<span>⚠ ${d.importantNotes.length}</span>`:''}</div></div><div class="closed-day-pnl"><b class="${Number(r.realizedPerAccount||0)>=0?'pos':'neg'}">${money(r.realizedPerAccount||0)}</b><small>Net / Account</small><strong>${money(r.portfolioRealized||0)}</strong><small>Portfolio</small></div></article>`}).join('')||'<div class="closed-empty"><b>لا توجد صفقات مغلقة في هذا اليوم.</b><span>التقويم يعرض فقط الصفقات التي حالتها Closed في تاريخ التداول المحدد.</span></div>'}</div>`;
   root.querySelector('[data-closed-close]').onclick=closeOverlay;
-  root.querySelectorAll('[data-closed-trade]').forEach(x=>x.onclick=()=>openTrade(x.dataset.closedTrade,date));
+  root.querySelectorAll('[data-closed-trade]').forEach(x=>x.onclick=()=>navigateToTrade(x.dataset.closedTrade,date));
 }
 
 function chartHtml(key,title,rec,adds){
@@ -85,6 +92,26 @@ export function openTrade(id,fromDate=null){
   return true;
 }
 
+export function navigateToTrade(id,date=null){
+  if(!id)return false;
+  if(!/^#closed-trade\?/i.test(location.hash)) previousHash=location.hash||'#dashboard';
+  const target=`#closed-trade?id=${encodeURIComponent(id)}${date?`&date=${encodeURIComponent(date)}`:''}`;
+  if(location.hash===target){routeOwned=true;return openTrade(id,date)}
+  location.hash=target;
+  return true;
+}
+function parseClosedRoute(){
+  const m=String(location.hash||'').match(/^#closed-trade\?(.+)$/i);if(!m)return null;
+  const p=new URLSearchParams(m[1]);const id=p.get('id');if(!id)return null;
+  return {id,date:p.get('date')||null};
+}
+function handleClosedRoute(){
+  const route=parseClosedRoute();
+  if(route){routeOwned=true;openTrade(route.id,route.date);return true}
+  if(routeOwned&&overlay)destroyOverlay();
+  return false;
+}
+
 function tradeIdFromClick(target){
   const row=target.closest('tr,[data-trade-id],.trade-row,.trade-card,.card');
   const scopes=[row,target.closest('.modal'),target.closest('.page')].filter(Boolean);
@@ -93,14 +120,16 @@ function tradeIdFromClick(target){
 }
 
 document.addEventListener('click',e=>{
-  if(e.target.closest('.closed-log-overlay,.doc-overlay,.pnl-calendar-shell'))return;
+  if(e.target.closest('.closed-log-overlay,.doc-overlay,.pnl-calendar-shell,[data-pending-review-card-v24]'))return;
   const id=tradeIdFromClick(e.target);if(!id)return;
   const t=(loadState().trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return;
-  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openTrade(id,t.date||null);
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();navigateToTrade(id,t.date||null);
 },true);
 
-window.TradingOSClosedTrade={openTrade:(id,date=null)=>openTrade(id,date),openDay:date=>openDay(date),close:()=>closeOverlay(),ready:true};
+window.TradingOSClosedTrade={openTrade:(id,date=null)=>openTrade(id,date),openDay:date=>openDay(date),navigateToTrade:(id,date=null)=>navigateToTrade(id,date),close:()=>closeOverlay(),ready:true};
 document.documentElement.dataset.closedTradeRouter='ready';
 window.addEventListener('trading-os-open-closed-day',e=>{const d=e.detail?.date;if(d)openDay(d)});
-window.addEventListener('trading-os-open-closed-trade',e=>{const id=e.detail?.id;if(id)openTrade(id,e.detail?.date||null)});
-window.addEventListener('load',()=>localStorage.removeItem(OLD_DATE_FILTER_KEY));
+window.addEventListener('trading-os-open-closed-trade',e=>{const id=e.detail?.id;if(id)navigateToTrade(id,e.detail?.date||null)});
+window.addEventListener('hashchange',handleClosedRoute);
+window.addEventListener('load',()=>{localStorage.removeItem(OLD_DATE_FILTER_KEY);handleClosedRoute()});
+handleClosedRoute();
