@@ -13,6 +13,7 @@ function pendingTrades(state=load()){return (state.trades||[]).filter(isPendingR
 function save(state){state.meta=state.meta||{};state.meta.updatedAt=nowIso();localStorage.setItem(STATE_KEY,JSON.stringify(state));localStorage.setItem(PENDING_KEY,'1');window.dispatchEvent(new CustomEvent('trading-os-documentation-change',{detail:{updatedAt:state.meta.updatedAt}}));window.dispatchEvent(new CustomEvent('trading-os-review-change'));}
 function tradeIdFromClosedDetail(){const root=document.querySelector('.closed-log-overlay .closed-log-inner');if(!root)return null;return (root.textContent||'').match(/TR-[A-Za-z0-9-]+/)?.[0]||null}
 function tradeIdFromDocDetail(){const infos=[...document.querySelectorAll('.doc-overlay .doc-info')];for(const x of infos){if(x.querySelector('small')?.textContent.trim()==='Trade ID')return x.querySelector('b')?.textContent.trim()||null}return null}
+function openClosed(t){if(!t)return;if(window.TradingOSClosedTrade?.ready)window.TradingOSClosedTrade.openTrade(t.id,t.date||null);else window.dispatchEvent(new CustomEvent('trading-os-open-closed-trade',{detail:{id:t.id,date:t.date||null}}));}
 
 function reviewDraft(t){return t?.review&&typeof t.review==='object'?t.review:{}}
 function completeEnough(r){return ['adherence','lesson'].every(k=>hasValue(r?.[k]))&&hasValue(r?.error||r?.mistake||r?.mainError||r?.errorType)}
@@ -35,7 +36,7 @@ function persistReview(tradeId,finalize=false){
   if(finalize){t.documentation.reviewSnapshot=JSON.parse(JSON.stringify(t.review));t.documentation.reviewFinalizedAt=nowIso()}
   save(state);
   msg.textContent=finalize?'تم اعتماد المراجعة الأصلية وإقفالها.':'تم حفظ مسودة المراجعة.';msg.className='post-review-msg ok';
-  if(finalize)setTimeout(()=>{document.querySelector('.closed-log-overlay [data-closed-close]')?.click();window.dispatchEvent(new CustomEvent('trading-os-open-closed-trade',{detail:{id:tradeId,date:t.date||null}}));},250);
+  if(finalize)setTimeout(()=>{document.querySelector('.closed-log-overlay [data-closed-close]')?.click();openClosed(t);},250);
 }
 
 function injectClosedDetail(){
@@ -54,14 +55,7 @@ function badgeClosedLists(){
   const state=load(),pending=new Set(pendingTrades(state).map(t=>t.id));
   document.querySelectorAll('[data-closed-trade]').forEach(card=>{const id=card.dataset.closedTrade;if(!id||!pending.has(id)||card.querySelector('.pending-review-badge'))return;const badges=card.querySelector('.closed-day-badges')||card.querySelector('div');const b=document.createElement('span');b.className='pending-review-badge';b.textContent='بانتظار المراجعة';badges.appendChild(b)});
 }
-function dashboardCard(){
-  const dash=document.querySelector('#dashboard');if(!dash)return;const list=pendingTrades();let card=dash.querySelector('[data-pending-review-card]');
-  if(!list.length){card?.remove();return}
-  if(!card){card=document.createElement('section');card.dataset.pendingReviewCard='1';card.className='pending-review-dashboard';dash.prepend(card)}
-  card.innerHTML=`<div><small>Post-Trade Review</small><h3>بانتظار المراجعة: ${list.length}</h3><p>الصفقات المغلقة التي لم تُعتمد مراجعتها الأصلية بعد.</p></div><div class="pending-review-list">${list.slice(0,4).map(t=>`<button type="button" data-open-pending-review="${esc(t.id)}"><b>${esc(t.date||'')} · ${esc(t.instrument||'')}</b><span>${esc(t.direction||'')} · ${esc(t.id)}</span></button>`).join('')}</div>`;
-  card.querySelectorAll('[data-open-pending-review]').forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.openPendingReview);if(t)window.dispatchEvent(new CustomEvent('trading-os-open-closed-trade',{detail:{id:t.id,date:t.date||null}}))});
-}
-function refresh(){dashboardCard();badgeClosedLists();injectClosedDetail();injectDocDetail()}
+function refresh(){badgeClosedLists();injectClosedDetail();injectDocDetail()}
 let tm;function schedule(){clearTimeout(tm);tm=setTimeout(refresh,80)}
 new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('load',schedule);window.addEventListener('hashchange',schedule);window.addEventListener('trading-os-review-change',schedule);window.addEventListener('trading-os-documentation-change',schedule);schedule();
