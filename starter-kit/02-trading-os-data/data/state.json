@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "createdAt": "2026-09-12T00:00:00.000Z",
+    "updatedAt": "2026-09-12T00:00:00.000Z"
+  },
+  "settings": {
+    "displayTimezone": "BOTH",
+    "maxCompanies": 15,
+    "accountSizesK": [50, 100, 150, 200, 250, 300, 400],
+    "instruments": ["MNQ", "NQ"],
+    "defaultBufferPoints": 1
+  },
+  "companies": [
+    {"id":"CO-TRADEIFY","name":"Tradeify","active":true},
+    {"id":"CO-LUCID","name":"Lucid Trading","active":true},
+    {"id":"CO-ALPHA","name":"Alpha Futures","active":true},
+    {"id":"CO-BLUE-GUARDIAN","name":"Blue Guardian Futures","active":true},
+    {"id":"CO-FFN","name":"Funded Futures Network","active":true},
+    {"id":"CO-FFF","name":"Funded Futures Family","active":true},
+    {"id":"CO-TRADEDAY","name":"TradeDay","active":true},
+    {"id":"CO-TPT","name":"Take Profit Trader","active":true},
+    {"id":"CO-MFFU","name":"MyFundedFutures","active":true},
+    {"id":"CO-TOPSTEP","name":"Topstep","active":true}
+  ],
+  "accounts": [],
+  "trades": [],
+  "dailySessions": []
+}
