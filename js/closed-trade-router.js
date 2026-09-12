@@ -55,7 +55,7 @@ function ensureOverlay(){
 function closeOverlay(){overlay?.remove();overlay=null;returnDate=null}
 function header(title,sub,back=false){return `<div class="closed-log-top"><div><h2>${esc(title)}</h2><p>${esc(sub)}</p></div><div class="closed-log-actions">${back?'<button type="button" data-closed-back>← رجوع للسجل اليومي</button>':''}<button type="button" data-closed-close>إغلاق</button></div></div>`}
 
-function openDay(date){
+export function openDay(date){
   localStorage.removeItem(OLD_DATE_FILTER_KEY);
   returnDate=date;
   const state=loadState(),trades=(state.trades||[]).filter(t=>t.status==='Closed'&&t.date===date).sort((a,b)=>new Date(a.actualEntryAt||a.createdAt||0)-new Date(b.actualEntryAt||b.createdAt||0));
@@ -71,7 +71,7 @@ function chartHtml(key,title,rec,adds){
 async function hydrate(root,records){
   for(const rec of records){const wrap=root.querySelector(`[data-closed-img="${CSS.escape(rec.id)}"]`);if(!wrap)continue;const blob=await blobFor(rec);if(!blob){wrap.textContent='تعذر تحميل الصورة. تأكد من ربط GitHub على هذا الجهاز.';continue}const img=document.createElement('img');img.src=URL.createObjectURL(blob);wrap.innerHTML='';wrap.appendChild(img)}
 }
-function openTrade(id,fromDate=null){
+export function openTrade(id,fromDate=null){
   const state=loadState(),t=(state.trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return false;
   if(fromDate)returnDate=fromDate;
   localStorage.removeItem(OLD_DATE_FILTER_KEY);
@@ -99,14 +99,8 @@ document.addEventListener('click',e=>{
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openTrade(id,t.date||null);
 },true);
 
-window.TradingOSClosedTrade={
-  openTrade:(id,date=null)=>openTrade(id,date),
-  openDay:date=>openDay(date),
-  close:()=>closeOverlay(),
-  ready:true
-};
+window.TradingOSClosedTrade={openTrade:(id,date=null)=>openTrade(id,date),openDay:date=>openDay(date),close:()=>closeOverlay(),ready:true};
 document.documentElement.dataset.closedTradeRouter='ready';
-
 window.addEventListener('trading-os-open-closed-day',e=>{const d=e.detail?.date;if(d)openDay(d)});
 window.addEventListener('trading-os-open-closed-trade',e=>{const id=e.detail?.id;if(id)openTrade(id,e.detail?.date||null)});
 window.addEventListener('load',()=>localStorage.removeItem(OLD_DATE_FILTER_KEY));
