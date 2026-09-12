@@ -5,11 +5,11 @@ import {
   setToken,
   pushRemoteState,
   testConnection
-} from './github-sync.js?v=23';
+} from './github-sync.js?v=27';
 
 const STATE_KEY='trading-os-state-v1';
 const PENDING_KEY='trading-os-pending-v1';
-const VERSION='23.1';
+const VERSION='27.1';
 
 window.__TRADING_OS_SYNC_HOTFIX_VERSION=VERSION;
 
