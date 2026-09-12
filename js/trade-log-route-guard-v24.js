@@ -1,4 +1,4 @@
-import { openTrade as openClosedTradeDirect } from './closed-trade-router.js?v=26';
+import { openTrade as openClosedTradeDirect } from './closed-trade-router.js?v=27';
 
 const STATE_KEY='trading-os-state-v1';
 let lastOpenedId=null,lastOpenedAt=0;
@@ -25,7 +25,7 @@ function neutralizeClosedTradeLinks(){
 }
 
 window.addEventListener('click',e=>{
-  if(e.target.closest?.('.closed-log-overlay,.doc-overlay,.modal'))return;
+  if(e.target.closest?.('.closed-log-overlay,.doc-overlay,.modal,[data-pending-review-card-v24]'))return;
   const id=tradeIdFromNode(e.target);if(!id)return;
   const t=tradeById(id);if(!t||t.status!=='Closed')return;
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
