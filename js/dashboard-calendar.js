@@ -51,9 +51,13 @@ function render(){
   if((location.hash||'#dashboard').slice(1).split('?')[0]!=='dashboard')return;
   const page=document.querySelector('#app .page');
   if(!page)return;
+  const state=loadState(),y=view.getUTCFullYear(),m=view.getUTCMonth();
+  const signature=`${state.meta?.updatedAt||''}|${y}-${m}`;
   let root=page.querySelector('.pnl-calendar-shell');
+  if(root?.dataset.signature===signature)return;
   if(!root){root=document.createElement('section');root.className='pnl-calendar-shell';page.appendChild(root)}
-  const state=loadState(),map=dailyData(state),y=view.getUTCFullYear(),m=view.getUTCMonth(),dates=calendarDates(y,m),weeks=weekly(dates,map);
+  const map=dailyData(state),dates=calendarDates(y,m),weeks=weekly(dates,map);
+  root.dataset.signature=signature;
   root.innerHTML=`
     <div class="pnl-calendar-head">
       <div class="pnl-calendar-title"><h3>P&L Calendar</h3><p>Net Portfolio P&L · Master Trades count</p></div>
@@ -66,8 +70,8 @@ function render(){
       </div>
       <div class="pnl-weekly"><div class="pnl-weekly-label">Weekly</div>${weeks.map(w=>`<div class="pnl-week ${w.pnl>0?'win':w.pnl<0?'loss':''}"><b>${money(w.pnl)}</b><span>${w.trades} ${w.trades===1?'trade':'trades'}</span></div>`).join('')}</div>
     </div>`;
-  root.querySelector('[data-cal-prev]').onclick=()=>{view=new Date(Date.UTC(y,m-1,1));render()};
-  root.querySelector('[data-cal-next]').onclick=()=>{view=new Date(Date.UTC(y,m+1,1));render()};
+  root.querySelector('[data-cal-prev]').onclick=()=>{view=new Date(Date.UTC(y,m-1,1));root.dataset.signature='';render()};
+  root.querySelector('[data-cal-next]').onclick=()=>{view=new Date(Date.UTC(y,m+1,1));root.dataset.signature='';render()};
 }
 
 let timer;
