@@ -57,7 +57,7 @@ function isObj(x){ return x && typeof x === "object" && !Array.isArray(x); }
 function timeMs(x){ const n=Date.parse(x||""); return Number.isFinite(n)?n:0; }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-async function fetchWithRetry(url, options={}, attempts=3){
+async function fetchWithRetry(url, options={}, attempts=3, phase='request'){
   let lastError=null;
   for(let attempt=1; attempt<=attempts; attempt++){
     try{
@@ -68,7 +68,7 @@ async function fetchWithRetry(url, options={}, attempts=3){
     }
   }
   const detail=String(lastError?.message||lastError||"Failed to fetch");
-  throw new Error(`تعذر الاتصال بـ GitHub (${detail}). تحقق من الاتصال ثم أعد المحاولة.`);
+  throw new Error(`GitHub ${phase} network failed: ${detail}`);
 }
 
 function mergeArrays(remote=[], local=[]){
@@ -89,8 +89,6 @@ function mergeArrays(remote=[], local=[]){
     return [...map.values()];
   }
 
-  // Arrays such as trade allocations do not have stable IDs. The local version is
-  // the authoritative edit for that trade, while ID-based children are merged above.
   return clone(local);
 }
 function mergeObjects(remote,local){
@@ -133,8 +131,8 @@ function mergeStates(remote={},local={}){
 export async function fetchRemoteState(cfg=getGitHubConfig(), token=getToken()) {
   if(!cfg.owner || !cfg.repo || !token) throw new Error("GitHub غير مرتبط بهذا الجهاز.");
   const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.dataPath}?ref=${encodeURIComponent(cfg.branch||"main")}`;
-  const res=await fetchWithRetry(url,{headers:headers(token),cache:"no-store"});
-  if(!res.ok) throw new Error(`GitHub read failed: ${res.status}`);
+  const res=await fetchWithRetry(url,{headers:headers(token)},3,'READ');
+  if(!res.ok) throw new Error(`GitHub READ failed: ${res.status}`);
   const obj=await res.json();
   return {state:JSON.parse(base64ToUtf8(obj.content)), sha:obj.sha};
 }
@@ -148,21 +146,20 @@ async function pushRemoteStateImpl(state, cfg, token, message){
     const current=await fetchRemoteState(cfg,token);
     const merged=mergeStates(current.state,state);
     const body={message,content:utf8ToBase64(JSON.stringify(merged,null,2)),sha:current.sha,branch:cfg.branch||"main"};
-    const res=await fetchWithRetry(url,{method:"PUT",headers:{...headers(token),"Content-Type":"application/json"},body:JSON.stringify(body)},2);
+    const res=await fetchWithRetry(url,{method:"PUT",headers:{...headers(token),"Content-Type":"application/json"},body:JSON.stringify(body)},2,'WRITE');
     if(res.ok){
       const result=await res.json();
       return {...result, mergedState:merged, conflictRetries:attempt-1};
     }
     const text=await res.text();
-    lastError=new Error(`GitHub write failed: ${res.status} ${text.slice(0,240)}`);
+    lastError=new Error(`GitHub WRITE failed: ${res.status} ${text.slice(0,240)}`);
     if(res.status!==409) throw lastError;
     await sleep(150*attempt);
   }
-  throw lastError || new Error("GitHub write failed after conflict retries.");
+  throw lastError || new Error("GitHub WRITE failed after conflict retries.");
 }
 
 export function pushRemoteState(state, cfg=getGitHubConfig(), token=getToken(), message="Update trading data") {
-  // Serialize writes from this browser so two saves cannot reuse the same GitHub SHA.
   const job=()=>pushRemoteStateImpl(clone(state),cfg,token,message);
   const run=writeQueue.then(job,job);
   writeQueue=run.catch(()=>{});
@@ -176,8 +173,8 @@ export async function testConnection(cfg=getGitHubConfig(), token=getToken()) {
 export async function fetchRepoFile(path, cfg=getGitHubConfig(), token=getToken()) {
   if(!cfg.owner || !cfg.repo || !token) throw new Error("GitHub غير مرتبط بهذا الجهاز.");
   const url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path}?ref=${encodeURIComponent(cfg.branch||"main")}`;
-  const res=await fetchWithRetry(url,{headers:headers(token),cache:"no-store"});
-  if(!res.ok) throw new Error(`GitHub file read failed: ${res.status}`);
+  const res=await fetchWithRetry(url,{headers:headers(token)},3,'FILE READ');
+  if(!res.ok) throw new Error(`GitHub FILE READ failed: ${res.status}`);
   const obj=await res.json();
   const clean=(obj.content||"").replace(/\n/g,"");
   const binary=atob(clean); const bytes=new Uint8Array(binary.length);
