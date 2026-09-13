@@ -112,19 +112,9 @@ function handleClosedRoute(){
   return false;
 }
 
-function tradeIdFromClick(target){
-  const row=target.closest('tr,[data-trade-id],.trade-row,.trade-card,.card');
-  const scopes=[row,target.closest('.modal'),target.closest('.page')].filter(Boolean);
-  for(const s of scopes){const id=(s.textContent||'').match(/TR-[A-Za-z0-9-]+/)?.[0];if(id)return id}
-  return null;
-}
-
-document.addEventListener('click',e=>{
-  if(e.target.closest('.closed-log-overlay,.doc-overlay,.pnl-calendar-shell,[data-pending-review-card-v24]'))return;
-  const id=tradeIdFromClick(e.target);if(!id)return;
-  const t=(loadState().trades||[]).find(x=>x.id===id);if(!t||t.status!=='Closed')return;
-  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();navigateToTrade(id,t.date||null);
-},true);
+// Closed-trade navigation is intentionally explicit.
+// Pages such as Dashboard and Advanced Analytics may contain trade IDs in their text,
+// so a page-wide click must never infer a trade ID and hijack the click.
 
 window.TradingOSClosedTrade={openTrade:(id,date=null)=>openTrade(id,date),openDay:date=>openDay(date),navigateToTrade:(id,date=null)=>navigateToTrade(id,date),close:()=>closeOverlay(),ready:true};
 document.documentElement.dataset.closedTradeRouter='ready';
