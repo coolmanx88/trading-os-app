@@ -1,4 +1,4 @@
-/* v39 — compact page hierarchy and safer, denser layouts */
+/* v41 — compact page hierarchy, corrected New Trade stacking, and Settings consolidation */
 
 /* Dashboard: align Scope with the Dashboard title, remove the empty toolbar row, widen P&L Map, and lower KPI height. */
 .page.dv2-mounted>.page-title{margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -17,19 +17,17 @@
 .dv2-root.v38-dashboard .dv2-kpi:first-child .dv2-kpi-value{font-size:19px}
 .dv2-root.v38-dashboard .dv2-kpi-sub{font-size:9px;margin-top:3px;line-height:1.15}
 
-/* New trade: Definition at top, Impact beside it, Initial Entry under Definition, Target Accounts across the full width below. */
+/* New trade: independent left stack prevents the Impact card height from pushing Initial Entry down. */
 .v38-new-page>.page-title{margin-bottom:12px}
 .v38-new-page>.page-title .subtitle{display:none!important}
-.v38-new-page>.grid-2.stack{display:grid!important;grid-template-columns:minmax(520px,1.15fr) minmax(330px,.85fr)!important;gap:14px!important;align-items:start}
-.v38-new-page>.grid-2.stack>.card:nth-child(1){grid-column:1;grid-row:1}
-.v38-new-page>.grid-2.stack>.card:nth-child(4){grid-column:2;grid-row:1}
-.v38-new-page>.grid-2.stack>.card:nth-child(3){grid-column:1;grid-row:2}
-.v38-new-page>.grid-2.stack>.card:nth-child(2){grid-column:1/-1;grid-row:3}
+.v38-new-page>.grid-2.stack.v41-new-grid{display:flex!important;flex-direction:column!important;gap:12px!important;align-items:stretch!important}
+.v41-new-top{display:grid;grid-template-columns:minmax(520px,1.12fr) minmax(360px,.88fr);gap:12px;align-items:start;width:100%}
+.v41-new-left{display:flex;flex-direction:column;gap:12px;min-width:0}
+.v41-new-left>.card,.v41-new-top>.card,.v41-target-accounts{width:100%;align-self:start}
 .v38-new-page .card-head{padding:11px 14px}
 .v38-new-page .card-body{padding:13px 14px}
-.v38-new-page>.grid-2.stack>.card:nth-child(1) .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.v38-new-page>.grid-2.stack>.card:nth-child(3) .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.v38-new-page>.grid-2.stack>.card:nth-child(2) .account-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v41-trade-definition .form-grid,.v41-initial-entry .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.v41-target-accounts .account-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .v38-new-page .field{gap:5px}
 .v38-new-page .input,.v38-new-page .select{padding:8px 10px}
 .v38-new-page .segment{gap:5px}.v38-new-page .segment button{padding:8px 6px}
@@ -52,7 +50,21 @@
 .v38-accounts-page .v38-account-id-panel .account-id-row{grid-template-columns:1fr;gap:7px;padding:9px}
 .v38-accounts-page .v38-account-id-panel .account-id-footer{margin-top:10px;padding-top:10px}
 
-/* Advanced Analytics: v38 polish remains unchanged until the v39 visual concept is approved. */
+/* Settings: match reference 66 — concise importer, Companies left, one consolidated GitHub/Backup card right. */
+.v41-settings-page>.page-title{margin-bottom:10px}
+.v41-settings-page>.page-title .subtitle{display:none!important}
+.v41-settings-page .v41-csv-import-card>div>p{display:none!important}
+.v41-settings-page .v41-csv-import-card{margin-bottom:10px!important}
+.v41-settings-right-column{display:flex!important;flex-direction:column!important;gap:0!important;height:100%;min-height:100%}
+.v41-settings-github-card{display:flex!important;flex-direction:column!important;height:100%;min-height:100%;overflow:hidden}
+.v41-settings-github-card>.card-body{flex:1}
+.v41-backup-section{margin-top:auto;border-top:1px solid var(--line,#e3e9f1);background:inherit}
+.v41-backup-section>.card-head{border-top:0!important;padding-top:12px!important}
+.v41-backup-section>.card-body{padding-top:12px!important}
+.v41-settings-page>.grid-2{align-items:stretch!important}
+.v41-settings-page>.grid-2>.card,.v41-settings-page>.grid-2>.stack{height:100%}
+
+/* Legacy Advanced Analytics polish retained only as fallback; v40 analytics owns the current page. */
 .an-page.v38-analytics-page{gap:12px}
 .an-page.v38-analytics-page .an-head{align-items:center;padding-bottom:2px}
 .an-page.v38-analytics-page .an-head p{display:none}
@@ -72,23 +84,22 @@
 @media(max-width:1500px) and (min-width:1051px){
   .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:minmax(280px,.76fr) minmax(500px,1.24fr)!important}
   .dv2-root.v38-dashboard .dv2-recent{grid-column:1/-1}
-  .v38-new-page>.grid-2.stack{grid-template-columns:minmax(470px,1.08fr) minmax(310px,.92fr)!important}
+  .v41-new-top{grid-template-columns:minmax(470px,1.08fr) minmax(310px,.92fr)}
   .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:1050px){
   .page.dv2-mounted>.page-title{align-items:flex-start;flex-wrap:wrap}
   .v39-dashboard-scope{width:100%;justify-content:space-between}
   .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:1fr!important}
-  .v38-new-page>.grid-2.stack{grid-template-columns:1fr!important}
-  .v38-new-page>.grid-2.stack>.card{grid-column:1!important;grid-row:auto!important}
-  .v38-new-page>.grid-2.stack>.card:nth-child(1){order:1}.v38-new-page>.grid-2.stack>.card:nth-child(4){order:2}.v38-new-page>.grid-2.stack>.card:nth-child(3){order:3}.v38-new-page>.grid-2.stack>.card:nth-child(2){order:4}
+  .v41-new-top{grid-template-columns:1fr}
+  .v41-new-left{gap:12px}
+  .v41-target-accounts .account-groups{grid-template-columns:1fr}
   .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
   .an-page.v38-analytics-page .an-grid2:has(.an-evidence){grid-template-columns:1fr}
 }
 @media(max-width:700px){
   .v39-dashboard-scope select{min-width:0;max-width:64vw}
-  .v38-new-page>.grid-2.stack>.card:nth-child(1) .form-grid,.v38-new-page>.grid-2.stack>.card:nth-child(3) .form-grid{grid-template-columns:1fr 1fr}
-  .v38-new-page>.grid-2.stack>.card:nth-child(2) .account-groups{grid-template-columns:1fr}
+  .v41-trade-definition .form-grid,.v41-initial-entry .form-grid{grid-template-columns:1fr 1fr}
   .v38-accounts-page>.kpis{grid-template-columns:1fr 1fr}
   .v38-accounts-page .v38-account-id-panel .account-id-list{grid-template-columns:1fr}
   .an-page.v38-analytics-page .an-filters{grid-template-columns:1fr 1fr}
