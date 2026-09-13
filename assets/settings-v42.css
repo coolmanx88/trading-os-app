@@ -1,0 +1,35 @@
+/* v42 — Settings layout matching reference 66 */
+.v42-settings-page>.page-title{margin-bottom:8px!important}
+.v42-settings-page>.page-title .subtitle{display:none!important}
+.v42-settings-page .v42-csv-import-card{margin:0 0 10px!important}
+.v42-settings-page .v42-csv-import-card>div>p{display:none!important}
+
+.v42-settings-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  align-items:stretch;
+  width:100%;
+  direction:ltr;
+  margin:0;
+}
+.v42-settings-companies,.v42-settings-sync{min-width:0;direction:rtl}
+.v42-settings-companies{display:flex;align-items:stretch}
+.v42-settings-sync{display:flex;flex-direction:column;gap:10px}
+.v42-settings-grid .card{margin:0!important;width:100%;min-width:0}
+.v42-settings-companies>.v42-companies-card{height:100%;flex:1}
+.v42-settings-sync>.v42-github-card{flex:1 1 auto}
+.v42-settings-sync>.v42-backup-card{flex:0 0 auto}
+.v42-settings-grid .card-head{padding:12px 14px!important}
+.v42-settings-grid .card-body{padding:13px 14px!important}
+.v42-settings-grid .card-sub{display:none!important}
+
+/* Keep the two reference columns balanced while allowing their own content height. */
+.v42-settings-grid .table-wrap{max-height:none!important}
+.v42-settings-companies .table-wrap{height:100%}
+
+@media(max-width:1050px){
+  .v42-settings-grid{grid-template-columns:1fr}
+  .v42-settings-companies{order:2}
+  .v42-settings-sync{order:1}
+}
