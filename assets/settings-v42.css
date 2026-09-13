@@ -33,3 +33,13 @@
   .v42-settings-companies{order:2}
   .v42-settings-sync{order:1}
 }
+
+/* v44 — tighter Settings header and compact Tradovate launcher. */
+.v42-settings-page{padding-top:9px!important}
+.v42-settings-page>.page-title{margin-top:0!important;margin-bottom:5px!important;min-height:30px!important;align-items:center!important}
+.v42-settings-page>.page-title h1{font-size:25px!important;line-height:1.05!important}
+.v42-settings-page .v42-csv-import-card{padding:7px 10px!important;margin:0 0 8px!important;min-height:42px!important;border-radius:10px!important;gap:8px!important}
+.v42-settings-page .v42-csv-import-card>div{display:flex!important;align-items:center!important;min-height:0!important}
+.v42-settings-page .v42-csv-import-card h3{margin:0!important;font-size:14px!important;line-height:1.1!important}
+.v42-settings-page .v42-csv-import-card p,.v42-settings-page .v42-csv-import-card .csv-card-badges{display:none!important}
+.v42-settings-page .v42-csv-import-card>button{padding:5px 9px!important;min-height:26px!important;border-radius:7px!important;font-size:10.5px!important;line-height:1.1!important;white-space:nowrap!important}
