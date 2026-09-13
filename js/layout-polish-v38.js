@@ -56,20 +56,30 @@ function polishDashboard(page){
 function polishNewTrade(page){
   page.classList.add('v38-route-page','v38-new-page');
   const grid=page.querySelector(':scope > .grid-2.stack');
-  if(!grid||grid.querySelector(':scope > .v41-new-top'))return;
+  if(!grid)return;
+
+  const legacyTop=grid.querySelector(':scope > .v41-new-top');
+  if(legacyTop){
+    const legacyLeft=legacyTop.querySelector(':scope > .v41-new-left');
+    const definition=legacyLeft?.children?.[0];
+    const entry=legacyLeft?.children?.[1];
+    const impact=[...legacyTop.children].find(el=>el!==legacyLeft);
+    const accounts=grid.querySelector(':scope > .v41-target-accounts, :scope > .v42-target-accounts');
+    if(definition&&entry&&impact&&accounts){
+      grid.innerHTML='';
+      grid.append(definition,accounts,entry,impact);
+    }
+  }
+
   const cards=[...grid.children].filter(el=>el.classList?.contains('card'));
   if(cards.length<4)return;
   const definition=cards[0],accounts=cards[1],entry=cards[2],impact=cards[3];
-  definition.classList.add('v41-trade-definition');
-  entry.classList.add('v41-initial-entry');
-  impact.classList.add('v41-trade-impact');
-  accounts.classList.add('v41-target-accounts');
-  const top=document.createElement('div');top.className='v41-new-top';
-  const left=document.createElement('div');left.className='v41-new-left';
-  left.append(definition,entry);
-  top.append(left,impact);
-  grid.insertBefore(top,accounts);
-  grid.classList.add('v41-new-grid');
+  grid.classList.remove('v41-new-grid');
+  grid.classList.add('v42-new-grid');
+  definition.classList.add('v42-trade-definition');
+  entry.classList.add('v42-initial-entry');
+  impact.classList.add('v42-trade-impact');
+  accounts.classList.add('v42-target-accounts');
 }
 
 function cardByTitles(page,titles){
@@ -93,6 +103,7 @@ function polishSettings(page){
     importer.classList.add('v42-csv-import-card');
     const desc=importer.querySelector('h3 + p');
     if(desc)desc.remove();
+    importer.querySelector('.csv-card-badges')?.remove();
   }
   if(page.querySelector(':scope > .v42-settings-grid'))return;
 
