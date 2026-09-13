@@ -53,13 +53,62 @@ function polishDashboard(page){
   }
 }
 
+function polishNewTrade(page){
+  page.classList.add('v38-route-page','v38-new-page');
+  const grid=page.querySelector(':scope > .grid-2.stack');
+  if(!grid||grid.querySelector(':scope > .v41-new-top'))return;
+  const cards=[...grid.children].filter(el=>el.classList?.contains('card'));
+  if(cards.length<4)return;
+  const definition=cards[0],accounts=cards[1],entry=cards[2],impact=cards[3];
+  definition.classList.add('v41-trade-definition');
+  entry.classList.add('v41-initial-entry');
+  impact.classList.add('v41-trade-impact');
+  accounts.classList.add('v41-target-accounts');
+  const top=document.createElement('div');top.className='v41-new-top';
+  const left=document.createElement('div');left.className='v41-new-left';
+  left.append(definition,entry);
+  top.append(left,impact);
+  grid.insertBefore(top,accounts);
+  grid.classList.add('v41-new-grid');
+}
+
+function cardByTitle(page,title){
+  return[...page.querySelectorAll('.card')].find(card=>[...card.querySelectorAll('h2,h3,.card-title')].some(h=>h.textContent.trim()===title))||null;
+}
+
+function polishSettings(page){
+  page.classList.add('v41-settings-page');
+  const importer=page.querySelector('[data-tv-csv-import-card],.csv-import-card');
+  if(importer){
+    importer.classList.add('v41-csv-import-card');
+    const desc=importer.querySelector('h3 + p');
+    if(desc)desc.remove();
+  }
+  const github=cardByTitle(page,'GitHub Data Repository');
+  const backup=cardByTitle(page,'Backup / Export');
+  if(github){
+    github.classList.add('v41-settings-github-card');
+    github.parentElement?.classList.add('v41-settings-right-column');
+  }
+  if(github&&backup&&!github.querySelector('.v41-backup-section')){
+    const section=document.createElement('section');section.className='v41-backup-section';
+    const head=backup.querySelector('.card-head');
+    const body=backup.querySelector('.card-body');
+    if(head)section.appendChild(head);
+    if(body)section.appendChild(body);
+    github.appendChild(section);
+    backup.remove();
+  }
+}
+
 function polish(){
   const r=route();
   document.querySelectorAll('.v38-route-page').forEach(p=>p.classList.remove('v38-new-page','v38-accounts-page'));
   const page=document.querySelector('#app .page');
-  if(r==='new'&&page){page.classList.add('v38-route-page','v38-new-page')}
+  if(r==='new'&&page)polishNewTrade(page);
   if(r==='accounts'&&page){page.classList.add('v38-route-page');polishAccounts(page)}
   if(r==='dashboard'&&page)polishDashboard(page);
+  if(r==='settings'&&page)polishSettings(page);
   const an=document.querySelector('.an-page');if(r==='analytics'&&an)an.classList.add('v38-analytics-page');
 }
 
