@@ -72,33 +72,54 @@ function polishNewTrade(page){
   grid.classList.add('v41-new-grid');
 }
 
-function cardByTitle(page,title){
-  return[...page.querySelectorAll('.card')].find(card=>[...card.querySelectorAll('h2,h3,.card-title')].some(h=>h.textContent.trim()===title))||null;
+function cardByTitles(page,titles){
+  const wanted=titles.map(x=>x.trim().toLowerCase());
+  return[...page.querySelectorAll('.card')].find(card=>{
+    const headings=[...card.querySelectorAll('h2,h3,.card-title')].map(h=>h.textContent.trim().toLowerCase());
+    return headings.some(h=>wanted.includes(h));
+  })||null;
+}
+
+function removeIfEmpty(el,page){
+  if(!el||el===page||el.classList?.contains('v42-settings-grid'))return;
+  const meaningful=[...el.children].filter(x=>!x.matches('script,style'));
+  if(!meaningful.length)el.remove();
 }
 
 function polishSettings(page){
-  page.classList.add('v41-settings-page');
+  page.classList.add('v42-settings-page');
   const importer=page.querySelector('[data-tv-csv-import-card],.csv-import-card');
   if(importer){
-    importer.classList.add('v41-csv-import-card');
+    importer.classList.add('v42-csv-import-card');
     const desc=importer.querySelector('h3 + p');
     if(desc)desc.remove();
   }
-  const github=cardByTitle(page,'GitHub Data Repository');
-  const backup=cardByTitle(page,'Backup / Export');
-  if(github){
-    github.classList.add('v41-settings-github-card');
-    github.parentElement?.classList.add('v41-settings-right-column');
-  }
-  if(github&&backup&&!github.querySelector('.v41-backup-section')){
-    const section=document.createElement('section');section.className='v41-backup-section';
-    const head=backup.querySelector('.card-head');
-    const body=backup.querySelector('.card-body');
-    if(head)section.appendChild(head);
-    if(body)section.appendChild(body);
-    github.appendChild(section);
-    backup.remove();
-  }
+  if(page.querySelector(':scope > .v42-settings-grid'))return;
+
+  const companies=cardByTitles(page,['الشركات','Companies']);
+  const github=cardByTitles(page,['GitHub Data Repository']);
+  const backup=cardByTitles(page,['Backup / Export']);
+  if(!companies||!github||!backup)return;
+
+  const oldParents=new Set([companies.parentElement,github.parentElement,backup.parentElement]);
+  companies.classList.add('v42-companies-card');
+  github.classList.add('v42-github-card');
+  backup.classList.add('v42-backup-card');
+
+  const layout=document.createElement('section');
+  layout.className='v42-settings-grid';
+  const left=document.createElement('div');
+  left.className='v42-settings-companies';
+  const right=document.createElement('div');
+  right.className='v42-settings-sync';
+
+  left.append(companies);
+  right.append(github,backup);
+  layout.append(left,right);
+
+  const anchor=importer||page.querySelector('.page-title');
+  if(anchor)anchor.insertAdjacentElement('afterend',layout);else page.prepend(layout);
+  oldParents.forEach(p=>removeIfEmpty(p,page));
 }
 
 function polish(){
