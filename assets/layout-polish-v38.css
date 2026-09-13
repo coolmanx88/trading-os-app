@@ -1,0 +1,84 @@
+/* v38 — compact page hierarchy and safer, denser layouts */
+
+/* Dashboard: keep the page title only, remove duplicate overview copy, and give P&L Map more room. */
+.page.dv2-mounted>.page-title{margin-bottom:10px}
+.page.dv2-mounted>.page-title .subtitle{display:none!important}
+.dv2-root.v38-dashboard{gap:12px}
+.dv2-root.v38-dashboard .dv2-toolbar{justify-content:flex-end;align-items:center;padding-top:0}
+.dv2-root.v38-dashboard .dv2-toolbar>div:first-child{display:none!important}
+.dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:minmax(300px,.78fr) minmax(500px,1.28fr) minmax(250px,.64fr)!important;gap:12px}
+.dv2-root.v38-dashboard .dv2-equity .dv2-chart{height:230px}
+.dv2-root.v38-dashboard .dv2-equity .dv2-chart svg{height:205px}
+.dv2-root.v38-dashboard .dv2-calendar .dv2-days{padding-bottom:12px}
+
+/* New trade: title + two-column working canvas. Definition sits beside Initial Entry. */
+.v38-new-page>.page-title{margin-bottom:12px}
+.v38-new-page>.page-title .subtitle{display:none!important}
+.v38-new-page>.grid-2.stack{display:grid!important;grid-template-columns:minmax(360px,.78fr) minmax(560px,1.22fr)!important;gap:14px!important;align-items:start}
+.v38-new-page>.grid-2.stack>.card:nth-child(1){grid-column:1;grid-row:1}
+.v38-new-page>.grid-2.stack>.card:nth-child(3){grid-column:2;grid-row:1}
+.v38-new-page>.grid-2.stack>.card:nth-child(2){grid-column:1;grid-row:2}
+.v38-new-page>.grid-2.stack>.card:nth-child(4){grid-column:2;grid-row:2}
+.v38-new-page .card-head{padding:12px 14px}
+.v38-new-page .card-body{padding:14px}
+.v38-new-page>.grid-2.stack>.card:nth-child(1) .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.v38-new-page>.grid-2.stack>.card:nth-child(3) .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.v38-new-page .field{gap:5px}
+.v38-new-page .input,.v38-new-page .select{padding:9px 10px}
+.v38-new-page .segment{gap:5px}.v38-new-page .segment button{padding:8px 6px}
+.v38-new-page .account-group{padding:9px;gap:7px}
+.v38-new-page .impact-col{padding:12px}.v38-new-page .metric{padding:6px 0}
+
+/* Accounts: compact summary; account-number editor is on demand instead of permanently consuming the page. */
+.v38-accounts-page>.page-title{margin-bottom:12px;align-items:center}
+.v38-accounts-page>.page-title .subtitle{display:none!important}
+.v38-page-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.v38-accounts-page>.kpis{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.v38-accounts-page>.kpis .kpi{padding:11px 12px}
+.v38-accounts-page>.kpis .kpi .v{font-size:19px}
+.v38-accounts-page>.card .card-body{padding:12px}
+.v38-account-number{display:block;margin-top:4px;color:#7f96ab;font-size:9px;direction:ltr;text-align:right;white-space:nowrap}
+.v38-accounts-page .v38-account-id-panel{display:none!important;margin:0 0 12px;padding:12px}
+.v38-accounts-page .v38-account-id-panel.v38-open{display:block!important}
+.v38-accounts-page .v38-account-id-panel .account-id-head p{display:none}
+.v38-accounts-page .v38-account-id-panel .account-id-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.v38-accounts-page .v38-account-id-panel .account-id-row{grid-template-columns:1fr;gap:7px;padding:9px}
+.v38-accounts-page .v38-account-id-panel .account-id-footer{margin-top:10px;padding-top:10px}
+
+/* Advanced Analytics: stronger hierarchy and wider equity area, less dead vertical space. */
+.an-page.v38-analytics-page{gap:12px}
+.an-page.v38-analytics-page .an-head{align-items:center;padding-bottom:2px}
+.an-page.v38-analytics-page .an-head p{display:none}
+.an-page.v38-analytics-page .an-head>b{border:1px solid #2b3d50;background:#101923;border-radius:999px;padding:7px 10px;font-size:11px;color:#9eb0c3}
+.an-page.v38-analytics-page .an-card{padding:12px}
+.an-page.v38-analytics-page .an-filters{grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px}
+.an-page.v38-analytics-page .an-kpis{gap:8px}
+.an-page.v38-analytics-page .an-kpi{padding:11px}
+.an-page.v38-analytics-page .an-kpi b{font-size:21px}
+.an-page.v38-analytics-page .an-grid2:has(.an-evidence){grid-template-columns:minmax(300px,.78fr) minmax(0,1.35fr);gap:12px}
+.an-page.v38-analytics-page .an-evidence{gap:14px}
+.an-page.v38-analytics-page .an-score{font-size:38px;margin:8px 0}
+.an-page.v38-analytics-page .eq-chart-wrap{min-height:250px}
+.an-page.v38-analytics-page .an-best{gap:8px}
+.an-page.v38-analytics-page .an-heat{gap:5px}
+
+@media(max-width:1500px) and (min-width:1051px){
+  .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:minmax(300px,.82fr) minmax(460px,1.18fr)!important}
+  .dv2-root.v38-dashboard .dv2-recent{grid-column:1/-1}
+  .v38-new-page>.grid-2.stack{grid-template-columns:minmax(330px,.82fr) minmax(500px,1.18fr)!important}
+  .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+  .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:1fr!important}
+  .v38-new-page>.grid-2.stack{grid-template-columns:1fr!important}
+  .v38-new-page>.grid-2.stack>.card{grid-column:1!important;grid-row:auto!important}
+  .v38-new-page>.grid-2.stack>.card:nth-child(1){order:1}.v38-new-page>.grid-2.stack>.card:nth-child(3){order:2}.v38-new-page>.grid-2.stack>.card:nth-child(2){order:3}.v38-new-page>.grid-2.stack>.card:nth-child(4){order:4}
+  .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .an-page.v38-analytics-page .an-grid2:has(.an-evidence){grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .v38-new-page>.grid-2.stack>.card:nth-child(1) .form-grid,.v38-new-page>.grid-2.stack>.card:nth-child(3) .form-grid{grid-template-columns:1fr 1fr}
+  .v38-accounts-page>.kpis{grid-template-columns:1fr 1fr}
+  .v38-accounts-page .v38-account-id-panel .account-id-list{grid-template-columns:1fr}
+  .an-page.v38-analytics-page .an-filters{grid-template-columns:1fr 1fr}
+}
