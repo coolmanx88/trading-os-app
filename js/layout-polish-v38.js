@@ -38,14 +38,29 @@ function polishAccounts(page){
   addAccountNumbers(page);
 }
 
+function polishDashboard(page){
+  const dash=page?.querySelector('[data-dashboard-v2]');
+  if(!dash)return;
+  dash.classList.add('v38-dashboard','v39-dashboard');
+  const title=page.querySelector('.page-title'),toolbar=dash.querySelector('.dv2-toolbar'),scope=toolbar?.querySelector('label');
+  if(title&&scope){
+    const old=title.querySelector('[data-v39-dashboard-scope]');
+    if(old&&old!==scope)old.remove();
+    scope.dataset.v39DashboardScope='1';
+    scope.classList.add('v39-dashboard-scope');
+    title.appendChild(scope);
+    toolbar.classList.add('v39-empty-toolbar');
+  }
+}
+
 function polish(){
   const r=route();
   document.querySelectorAll('.v38-route-page').forEach(p=>p.classList.remove('v38-new-page','v38-accounts-page'));
   const page=document.querySelector('#app .page');
   if(r==='new'&&page){page.classList.add('v38-route-page','v38-new-page')}
   if(r==='accounts'&&page){page.classList.add('v38-route-page');polishAccounts(page)}
+  if(r==='dashboard'&&page)polishDashboard(page);
   const an=document.querySelector('.an-page');if(r==='analytics'&&an)an.classList.add('v38-analytics-page');
-  const dash=document.querySelector('[data-dashboard-v2]');if(r==='dashboard'&&dash)dash.classList.add('v38-dashboard');
 }
 
 let timer;function schedule(){clearTimeout(timer);timer=setTimeout(polish,40)}
