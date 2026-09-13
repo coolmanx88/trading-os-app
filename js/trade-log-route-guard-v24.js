@@ -1,4 +1,4 @@
-import { navigateToTrade as navigateToClosedTrade } from './closed-trade-router.js?v=28';
+import { navigateToTrade as navigateToClosedTrade } from './closed-trade-router.js?v=38';
 
 const STATE_KEY='trading-os-state-v1';
 let lastOpenedId=null,lastOpenedAt=0;
@@ -20,8 +20,12 @@ function neutralizeClosedTradeLinks(){
 }
 
 window.addEventListener('click',e=>{
+  // Only the historical Trade Log owns row-wide closed-trade navigation.
+  // Never scan Dashboard / Analytics / Accounts pages for a TR-* string.
+  if(!/^#log(?:\?|$)/i.test(location.hash))return;
   if(e.target.closest?.('.closed-log-overlay,.doc-overlay,.modal,[data-pending-review-card-v24]'))return;
-  const id=tradeIdFromNode(e.target);if(!id)return;
+  const row=e.target.closest?.('tr[data-closed-trade-row]');if(!row)return;
+  const id=(row.textContent||'').match(/TR-[A-Za-z0-9-]+/)?.[0];if(!id)return;
   const t=tradeById(id);if(!t||t.status!=='Closed')return;
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
   fireClosedTrade(t);
