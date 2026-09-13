@@ -1,0 +1,25 @@
+/* v45 — exact New Trade layout from approved reference image 88. */
+.v38-new-page>.v45-new-trade-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr)!important;
+  gap:12px!important;
+  align-items:start!important;
+  direction:ltr!important;
+  width:100%;
+}
+.v45-impact-column,.v45-trade-column{min-width:0;direction:rtl!important}
+.v45-impact-column{display:flex;flex-direction:column;gap:12px}
+.v45-trade-column{display:flex;flex-direction:column;gap:12px}
+.v45-impact-column>.card,.v45-trade-column>.card{width:100%!important;min-width:0!important;align-self:stretch!important;margin:0!important}
+.v45-trade-column .v42-target-accounts,.v45-trade-column .v41-target-accounts{width:100%!important}
+.v45-trade-column .v42-target-accounts .account-groups,.v45-trade-column .v41-target-accounts .account-groups{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+.v45-trade-column .v42-target-accounts .account-group,.v45-trade-column .v41-target-accounts .account-group{padding:8px 9px!important}
+.v45-trade-column .card-head{padding:10px 13px!important}
+.v45-trade-column .card-body{padding:11px 13px!important}
+@media(max-width:1500px) and (min-width:1051px){
+  .v38-new-page>.v45-new-trade-layout{grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr)!important}
+}
+@media(max-width:1050px){
+  .v38-new-page>.v45-new-trade-layout{grid-template-columns:1fr!important;direction:rtl!important}
+  .v45-trade-column{order:1}.v45-impact-column{order:2}
+}
