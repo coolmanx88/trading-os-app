@@ -50,7 +50,7 @@
 .v38-accounts-page .v38-account-id-panel .account-id-row{grid-template-columns:1fr;gap:7px;padding:9px}
 .v38-accounts-page .v38-account-id-panel .account-id-footer{margin-top:10px;padding-top:10px}
 
-/* Settings: match reference 66 — concise importer, Companies left, one consolidated GitHub/Backup card right. */
+/* Settings: legacy fallback; v42 settings stylesheet owns the current layout. */
 .v41-settings-page>.page-title{margin-bottom:10px}
 .v41-settings-page>.page-title .subtitle{display:none!important}
 .v41-settings-page .v41-csv-import-card>div>p{display:none!important}
@@ -84,23 +84,31 @@
 @media(max-width:1500px) and (min-width:1051px){
   .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:minmax(280px,.76fr) minmax(500px,1.24fr)!important}
   .dv2-root.v38-dashboard .dv2-recent{grid-column:1/-1}
-  .v41-new-top{grid-template-columns:minmax(470px,1.08fr) minmax(310px,.92fr)}
   .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:1050px){
   .page.dv2-mounted>.page-title{align-items:flex-start;flex-wrap:wrap}
   .v39-dashboard-scope{width:100%;justify-content:space-between}
   .dv2-root.v38-dashboard .dv2-main-grid{grid-template-columns:1fr!important}
-  .v41-new-top{grid-template-columns:1fr}
-  .v41-new-left{gap:12px}
-  .v41-target-accounts .account-groups{grid-template-columns:1fr}
   .v38-accounts-page>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
   .an-page.v38-analytics-page .an-grid2:has(.an-evidence){grid-template-columns:1fr}
 }
 @media(max-width:700px){
   .v39-dashboard-scope select{min-width:0;max-width:64vw}
-  .v41-trade-definition .form-grid,.v41-initial-entry .form-grid{grid-template-columns:1fr 1fr}
   .v38-accounts-page>.kpis{grid-template-columns:1fr 1fr}
   .v38-accounts-page .v38-account-id-panel .account-id-list{grid-template-columns:1fr}
   .an-page.v38-analytics-page .an-filters{grid-template-columns:1fr 1fr}
 }
+
+/* v44 — New Trade exact requested layout: Definition top-left, Initial Entry top-right, Impact bottom-left, Target Accounts directly under Initial Entry at the same width. */
+.v38-new-page>.grid-2.stack.v42-new-grid{display:grid!important;grid-template-columns:minmax(420px,.92fr) minmax(520px,1.08fr)!important;grid-template-areas:"def entry" "impact accounts";gap:12px!important;align-items:start!important}
+.v38-new-page>.grid-2.stack.v42-new-grid>.card{width:100%;min-width:0;align-self:start}
+.v42-trade-definition{grid-area:def}
+.v42-initial-entry{grid-area:entry}
+.v42-trade-impact{grid-area:impact}
+.v42-target-accounts{grid-area:accounts}
+.v42-target-accounts .account-groups{display:grid;grid-template-columns:1fr!important;gap:10px!important}
+.v42-target-accounts .account-group{padding:9px!important}
+.v42-trade-definition .form-grid,.v42-initial-entry .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+@media(max-width:1050px){.v38-new-page>.grid-2.stack.v42-new-grid{grid-template-columns:1fr!important;grid-template-areas:"def" "entry" "impact" "accounts"}}
+@media(max-width:700px){.v42-trade-definition .form-grid,.v42-initial-entry .form-grid{grid-template-columns:1fr 1fr}}
