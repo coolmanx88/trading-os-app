@@ -3,7 +3,8 @@ import { navigateToTrade as navigateToClosedTrade } from './closed-trade-router.
 const STATE_KEY='trading-os-state-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
 function load(){try{return JSON.parse(localStorage.getItem(STATE_KEY)||'{}')}catch{return{trades:[]}}}
-function pendingTrades(){return (load().trades||[]).filter(t=>t.status==='Closed'&&!(t.documentation?.reviewFinalizedAt&&t.documentation?.reviewSnapshot))}
+function hasReviewEvidence(t){const d=t?.documentation||{};const addenda=Array.isArray(d.reviewAddenda)?d.reviewAddenda:[];const r=t?.review;return Boolean((d.reviewFinalizedAt&&d.reviewSnapshot)||d.reviewSnapshot||addenda.some(x=>String(x?.text||'').trim())||(r&&[r.adherence,r.error,r.mistake,r.mainError,r.lesson,r.comment,r.notes].some(v=>String(v??'').trim())))}
+function pendingTrades(){return (load().trades||[]).filter(t=>t.status==='Closed'&&!hasReviewEvidence(t))}
 function dashboardPage(){return [...document.querySelectorAll('.page')].find(p=>p.querySelector('.page-title h1')?.textContent.trim()==='Dashboard')||null}
 function renderDashboardPending(){
   const page=dashboardPage();if(!page)return;
@@ -11,7 +12,7 @@ function renderDashboardPending(){
   let card=page.querySelector('[data-pending-review-card-v24]');
   if(!list.length){card?.remove();return}
   if(!card){card=document.createElement('section');card.dataset.pendingReviewCardV24='1';card.className='pending-review-dashboard';const title=page.querySelector('.page-title');if(title?.nextSibling)title.parentNode.insertBefore(card,title.nextSibling);else page.prepend(card)}
-  card.innerHTML=`<div><small>Post-Trade Review</small><h3>بانتظار المراجعة: ${list.length}</h3><p>صفقات مغلقة لم تُعتمد مراجعتها الأصلية بعد.</p></div><div class="pending-review-list">${list.slice(0,5).map(t=>`<button type="button" data-open-review="${esc(t.id)}" title="فتح تفاصيل الصفقة"><b>${esc(t.instrument||'')} · ${esc(t.date||'')}</b><span>${esc(t.direction||'')}</span></button>`).join('')}</div>`;
+  card.innerHTML=`<div><small>Post-Trade Review</small><h3>بانتظار المراجعة: ${list.length}</h3><p>صفقات مغلقة لا تحتوي على مراجعة أو ملاحظة تحليلية بعد.</p></div><div class="pending-review-list">${list.slice(0,5).map(t=>`<button type="button" data-open-review="${esc(t.id)}" title="فتح تفاصيل الصفقة"><b>${esc(t.instrument||'')} · ${esc(t.date||'')}</b><span>${esc(t.direction||'')}</span></button>`).join('')}</div>`;
   card.querySelectorAll('[data-open-review]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const t=list.find(x=>x.id===btn.dataset.openReview);if(t)navigateToClosedTrade(t.id,t.date||null)},false));
 }
 function markPendingRows(){
