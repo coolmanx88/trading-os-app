@@ -18,10 +18,12 @@ const pad=n=>String(n).padStart(2,'0');
 function loadState(){try{return JSON.parse(localStorage.getItem(STATE_KEY)||'{}')}catch{return{accounts:[],trades:[],companies:[]}}}
 function loadFilter(){try{return localStorage.getItem(FILTER_KEY)||'ALL'}catch{return'ALL'}}
 function saveFilter(v){try{localStorage.setItem(FILTER_KEY,v)}catch{}}
-function route(){return(location.hash||'#dashboard').slice(1).split('?')[0]}
+function route(){return(location.hash||'#dashboard').slice(1).split('?')[0].replace(/^\/+/, '')}
+function isDashboard(){const r=route();if(r==='dashboard'||r==='')return true;const h=document.querySelector('#app .page .page-title h1')?.textContent.trim();return h==='Dashboard'||h==='لوحة التحكم'}
 function tradeTime(t){if(t.actualExitAt)return t.actualExitAt;const e=[...(t.events||[])].reverse().find(x=>x.type==='CLOSE');return e?.actualTimestamp||e?.timestamp||t.closedAt||t.actualEntryAt||t.createdAt||`${t.date||'1970-01-01'}T12:00:00Z`}
 function tradeDate(t){return t.date||new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(tradeTime(t)))}
-function reviewPending(t){return t.status==='Closed'&&!(t.documentation?.reviewFinalizedAt&&t.documentation?.reviewSnapshot)}
+function hasReviewEvidence(t){const d=t?.documentation||{};const addenda=Array.isArray(d.reviewAddenda)?d.reviewAddenda:[];const r=t?.review;return Boolean((d.reviewFinalizedAt&&d.reviewSnapshot)||d.reviewSnapshot||addenda.some(x=>String(x?.text||'').trim())||(r&&[r.adherence,r.error,r.mistake,r.mainError,r.lesson,r.comment,r.notes].some(v=>String(v??'').trim())))}
+function reviewPending(t){return t.status==='Closed'&&!hasReviewEvidence(t)}
 function currentAccount(a){return !!a&&CURRENT_STATUSES.has(a.status)}
 function accountMap(state){return Object.fromEntries((state.accounts||[]).map(a=>[a.id,a]))}
 
@@ -103,12 +105,12 @@ function recentRows(rows){const list=[...rows].sort((a,b)=>new Date(b.at)-new Da
 function accountStatus(state,companyId){const acc=selectedAccounts(state,companyId,false),statuses=['Active','Paused','Lost','Completed','Closed'];return`<div class="dv2-status-grid">${statuses.map(s=>`<div><span>${s}</span><b>${acc.filter(a=>a.status===s).length}</b></div>`).join('')}<div><span>Total</span><b>${acc.length}</b></div></div>`}
 
 function render(){
-  if(route()!=='dashboard'){document.querySelectorAll('.page.dv2-mounted').forEach(p=>p.classList.remove('dv2-mounted'));return}
+  if(!isDashboard()){document.querySelectorAll('.page.dv2-mounted').forEach(p=>p.classList.remove('dv2-mounted'));return}
   const page=document.querySelector('#app .page');if(!page)return;
   const state=loadState(),companyId=loadFilter(),sig=`${state.meta?.updatedAt||''}|${companyId}|${calendarView.toISOString().slice(0,7)}`;
   let root=page.querySelector('[data-dashboard-v2]');if(root&&lastSignature===sig)return;
   page.classList.add('dv2-mounted');
-  if(!root){root=document.createElement('section');root.dataset.dashboardV2='1';root.className='dv2-root';const title=page.querySelector('.page-title');if(title)title.insertAdjacentElement('afterend',root);else page.prepend(root)}
+  if(!root){root=document.createElement('section');root.dataset.dashboardV2='1';root.dataset.build='v48';root.className='dv2-root';const title=page.querySelector('.page-title');if(title)title.insertAdjacentElement('afterend',root);else page.prepend(root)}
   const s=stats(state,companyId),companies=(state.companies||[]).filter(c=>(state.accounts||[]).some(a=>a.companyId===c.id));
   root.innerHTML=`
     <div class="dv2-toolbar"><label>Scope<select data-dv2-company><option value="ALL">All Current Accounts</option>${companies.map(c=>`<option value="${esc(c.id)}" ${c.id===companyId?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label></div>
@@ -140,4 +142,5 @@ window.addEventListener('storage',e=>{if(e.key===STATE_KEY){lastSignature='';sch
 window.addEventListener('trading-os-documentation-change',()=>{lastSignature='';schedule()});
 new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
 schedule();
-window.TradingOSDashboardV2={render,ready:true};
+let bootChecks=0;const bootWatch=setInterval(()=>{bootChecks++;if(isDashboard()&&!document.querySelector('[data-dashboard-v2]')){lastSignature='';try{render()}catch(e){console.error('Dashboard v48 render failed',e)}}if(document.querySelector('[data-dashboard-v2]')||bootChecks>=20)clearInterval(bootWatch)},300);
+window.TradingOSDashboardV2={render,ready:true,build:'v48'};
