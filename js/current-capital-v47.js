@@ -13,7 +13,7 @@ function balance(a,state){return opening(a)+tradingNet(a.id,state)+adjustments(a
 function currentAccounts(state){return(state.accounts||[]).filter(a=>CURRENT_STATUSES.has(a.status))}
 function currentCapital(state){return currentAccounts(state).reduce((s,a)=>s+balance(a,state),0)}
 function patch(){
-  if(route()!=='accounts')return;
+  const r=route();if(!['accounts','dashboard'].includes(r))return;
   const page=document.querySelector('#app .page');if(!page)return;
   const state=readState(),total=currentCapital(state);
   for(const label of page.querySelectorAll('.kpi .k')){
