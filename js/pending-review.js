@@ -8,7 +8,8 @@ const nyDate=iso=>{try{return new Intl.DateTimeFormat('en-US',{timeZone:'America
 const hasValue=v=>v!==undefined&&v!==null&&String(v).trim()!=='';
 
 function isFinalized(t){return Boolean(t?.documentation?.reviewFinalizedAt&&t?.documentation?.reviewSnapshot)}
-function isPendingReview(t){return t?.status==='Closed'&&!isFinalized(t)}
+function hasReviewEvidence(t){const d=t?.documentation||{};const addenda=Array.isArray(d.reviewAddenda)?d.reviewAddenda:[];const r=t?.review;return Boolean(isFinalized(t)||d.reviewSnapshot||addenda.some(x=>String(x?.text||'').trim())||(r&&[r.adherence,r.error,r.mistake,r.mainError,r.lesson,r.comment,r.notes].some(v=>String(v??'').trim())))}
+function isPendingReview(t){return t?.status==='Closed'&&!hasReviewEvidence(t)}
 function pendingTrades(state=load()){return (state.trades||[]).filter(isPendingReview)}
 function save(state){state.meta=state.meta||{};state.meta.updatedAt=nowIso();localStorage.setItem(STATE_KEY,JSON.stringify(state));localStorage.setItem(PENDING_KEY,'1');window.dispatchEvent(new CustomEvent('trading-os-documentation-change',{detail:{updatedAt:state.meta.updatedAt}}));window.dispatchEvent(new CustomEvent('trading-os-review-change'));}
 function tradeIdFromClosedDetail(){const root=document.querySelector('.closed-log-overlay .closed-log-inner');if(!root)return null;return (root.textContent||'').match(/TR-[A-Za-z0-9-]+/)?.[0]||null}
@@ -42,13 +43,13 @@ function persistReview(tradeId,finalize=false){
 function injectClosedDetail(){
   const section=document.querySelector('.closed-log-overlay .closed-review');if(!section||section.dataset.pendingReviewChecked==='1')return;
   const id=tradeIdFromClosedDetail(),state=load(),t=(state.trades||[]).find(x=>x.id===id);if(!t)return;section.dataset.pendingReviewChecked='1';
-  if(isFinalized(t))return;
+  if(hasReviewEvidence(t))return;
   section.insertAdjacentHTML('beforebegin',formHtml(t));const box=document.querySelector(`[data-post-review="${CSS.escape(id)}"]`);box.querySelector('[data-pr-save]').onclick=()=>persistReview(id,false);box.querySelector('[data-pr-finalize]').onclick=()=>persistReview(id,true);
 }
 function injectDocDetail(){
   const section=document.querySelector('.doc-overlay .doc-review');if(!section||section.dataset.pendingReviewChecked==='1')return;
   const id=tradeIdFromDocDetail(),state=load(),t=(state.trades||[]).find(x=>x.id===id);if(!t)return;section.dataset.pendingReviewChecked='1';
-  if(isFinalized(t))return;
+  if(hasReviewEvidence(t))return;
   section.insertAdjacentHTML('beforebegin',formHtml(t));const box=document.querySelector(`[data-post-review="${CSS.escape(id)}"]`);box.querySelector('[data-pr-save]').onclick=()=>persistReview(id,false);box.querySelector('[data-pr-finalize]').onclick=()=>persistReview(id,true);
 }
 function badgeClosedLists(){
