@@ -53,9 +53,14 @@ export function replayTrade(trade) {
   let currentStopPrice = Number(trade.stopPrice || 0);
   const timeline = [];
   // Buffer points are only for target planning. Fees are independent.
-  const feePerContractSide = Math.max(0, Number(trade.feePerContractSide ?? cfg?.feePerContractSide ?? 0));
-
   const events = [...(trade.events || [])].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  const topstepSource = trade.importSource?.type === 'TOPSTEP_TRADES_CSV';
+  const sourceFees = Number(trade.importSource?.sourceFees);
+  const sourceCommissions = Number(trade.importSource?.sourceCommissions);
+  const closedQty = events.filter(e=>['REDUCE','CLOSE'].includes(e.type)).reduce((s,e)=>s+Math.max(0,Number(e.qtyPerAccount||0)),0);
+  const sourceCosts = (Number.isFinite(sourceFees)?sourceFees:0) + (Number.isFinite(sourceCommissions)?sourceCommissions:0);
+  const sourceFeePerContractSide = topstepSource && closedQty>0 && sourceCosts>=0 ? sourceCosts/(closedQty*2) : null;
+  const feePerContractSide = Math.max(0, Number(sourceFeePerContractSide ?? trade.feePerContractSide ?? cfg?.feePerContractSide ?? 0));
   for (const ev of events) {
     const q = Number(ev.qtyPerAccount || 0);
     const price = Number(ev.price || 0);
