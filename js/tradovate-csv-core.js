@@ -16,6 +16,41 @@ export function parseRiyadhTimestamp(s){
   const m=String(s||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/);if(!m)return null;
   const [,mo,d,y,h,mi,se]=m.map(Number);return new Date(Date.UTC(y,mo-1,d,h-3,mi,se)).toISOString();
 }
+
+export function parseOffsetTimestamp(s){
+  const m=String(s||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*([+-]\d{2}:\d{2})$/);if(!m)return null;
+  const [,mo,d,y,h,mi,se,off]=m;const z=v=>String(v).padStart(2,'0'),dt=new Date(`${y}-${z(mo)}-${z(d)}T${z(h)}:${z(mi)}:${z(se)}${off}`);return Number.isFinite(dt.getTime())?dt.toISOString():null;
+}
+export function detectCsvFormat(rows){
+  const keys=new Set(Object.keys(rows?.[0]||{}));
+  const topstep=['Id','ContractName','EnteredAt','ExitedAt','EntryPrice','ExitPrice','PnL','Size','Type'].every(k=>keys.has(k));
+  if(topstep)return'TOPSTEP_TRADES';
+  if(keys.has('Order ID')&&keys.has('Account')&&keys.has('Status'))return'TRADOVATE_ORDERS';
+  return'UNKNOWN';
+}
+export function normalizeTopstepTrades(rows){
+  const groups=new Map();let ignored=0,unsupported=0,sourceRows=0;
+  for(const r of rows){
+    const id=String(r.Id||'').trim(),instrument=instrumentOf({Contract:r.ContractName||''}),direction=String(r.Type||'').trim().toUpperCase(),qty=num(r.Size),entryPrice=num(r.EntryPrice),exitPrice=num(r.ExitPrice),entryAt=parseOffsetTimestamp(r.EnteredAt),exitAt=parseOffsetTimestamp(r.ExitedAt),fees=Math.max(0,num(r.Fees)),pnl=num(r.PnL);
+    if(!id||!['LONG','SHORT'].includes(direction)||!qty||!entryPrice||!exitPrice||!entryAt||!exitAt){ignored++;continue}
+    if(!INSTRUMENTS[instrument]){unsupported++;continue}
+    sourceRows++;
+    const k=[instrument,direction,exitAt,exitPrice.toFixed(8)].join('|');
+    if(!groups.has(k))groups.set(k,{instrument,direction,exitAt,exitPrice,slices:[]});
+    groups.get(k).slices.push({id,qty,entryPrice,entryAt,fees,pnl,commissions:num(r.Commissions),contract:r.ContractName||''});
+  }
+  const candidates=[];
+  for(const g of groups.values()){
+    g.slices.sort((a,b)=>ms(a.entryAt)-ms(b.entryAt));
+    const totalQty=g.slices.reduce((s,x)=>s+x.qty,0),entryPrice=g.slices.reduce((s,x)=>s+x.entryPrice*x.qty,0)/totalQty,totalFees=g.slices.reduce((s,x)=>s+x.fees,0),sourcePnl=g.slices.reduce((s,x)=>s+x.pnl,0),sourceCommissions=g.slices.reduce((s,x)=>s+x.commissions,0);
+    const events=g.slices.map((x,i)=>({type:i?'ADD':'INITIAL',qty:x.qty,price:x.entryPrice,at:x.entryAt,orderId:x.id}));
+    events.push({type:'CLOSE',qty:totalQty,price:g.exitPrice,at:g.exitAt,orderId:`TOPSTEP_EXIT:${g.exitAt}`});
+    const cfg=INSTRUMENTS[g.instrument],calcGross=g.slices.reduce((s,x)=>s+(g.direction==='LONG'?(g.exitPrice-x.entryPrice):(x.entryPrice-g.exitPrice))*x.qty*cfg.pointValue,0),validated=near(calcGross,sourcePnl,.02);
+    const c={sourceAccounts:['TOPSTEP_FILE_NO_ACCOUNT'],sourceAccountMissing:true,sourceProvider:'Topstep',sourceType:'TOPSTEP_TRADES_CSV',sourceFormat:'TOPSTEP_TRADES',timeZoneSource:'Embedded UTC offset',instrument:g.instrument,contract:g.slices[0]?.contract||'',direction:g.direction,events,sourceOrderIds:g.slices.map(x=>x.id),position:0,maxQty:totalQty,initialQty:totalQty,entryPrice,exitPrice:g.exitPrice,entryAt:g.slices[0].entryAt,exitAt:g.exitAt,date:nyDate(g.slices[0].entryAt),feePerContractSide:totalQty?totalFees/(2*totalQty):0,sourceGrossPnl:sourcePnl,sourceFees:totalFees,sourceNetPnl:sourcePnl-totalFees,sourceCommissions,performance:{pnl:sourcePnl,validated,score:validated?8:0}};
+    c.fingerprint=[c.instrument,c.direction,c.initialQty,c.entryPrice.toFixed(8),c.exitPrice.toFixed(8),c.entryAt,c.exitAt].join('|');candidates.push(c);
+  }
+  return{candidates:candidates.sort((a,b)=>ms(a.entryAt)-ms(b.entryAt)),ignored,unsupported,sourceRows};
+}
 export function nyDate(iso){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));const o=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${o.year}-${o.month}-${o.day}`}
 export function nyTime(iso){return new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(iso))}
 function instrumentOf(row){const p=(row.Product||'').trim().toUpperCase();if(INSTRUMENTS[p])return p;const c=(row.Contract||row.symbol||'').trim().toUpperCase();if(c.startsWith('MNQ'))return'MNQ';if(c.startsWith('NQ'))return'NQ';return p||c.replace(/[^A-Z].*$/,'')}
@@ -43,7 +78,7 @@ export function classifyCandidates(candidates,state,company){
   const trades=state.trades||[],companyId=company?.id;
   for(const c of candidates){
     const ids=new Set(c.sourceOrderIds.map(String));
-    const sourceHit=trades.find(t=>{const src=t.importSource||{};const sameProvider=src.provider==='Tradovate'||src.type===PROVIDER;const sameCompany=src.companyId===companyId;return sameProvider&&sameCompany&&[...ids].some(id=>importedIds(t).has(id))});
+    const sourceHit=trades.find(t=>{const src=t.importSource||{};const provider=c.sourceProvider||'Tradovate',sourceType=c.sourceType||PROVIDER;const sameProvider=src.provider===provider||src.type===sourceType;const sameCompany=src.companyId===companyId;return sameProvider&&sameCompany&&[...ids].some(id=>importedIds(t).has(id))});
     if(sourceHit){c.match={kind:'imported',trade:sourceHit,score:999};c.action='skip';continue}
     let best=null;for(const t of trades){const m=score(c,t,companyId);if(!best||m.score>best.score)best=m}
     if(best&&best.score>=115){c.match={kind:'existing',...best};c.action='link'}else if(best&&best.score>=80){c.match={kind:'possible',...best};c.action='skip'}else{c.match={kind:'new',score:best?.score||0};c.action='import'}
@@ -52,8 +87,8 @@ export function classifyCandidates(candidates,state,company){
 export function companyAccounts(state,companyId){return(state.accounts||[]).filter(a=>a.companyId===companyId)}
 export function mappingFor(source,state,companyId){const map=state.settings?.tradovateAccountMap||{};return map[`${companyId}:${source}`]||(companyId==='CO-TRADEIFY'?map[`Tradeify:${source}`]:'')||''}
 export function accountLabel(a){return `${a.stage||'—'} · ${a.sizeK||'—'}K · #${a.sequence||'—'} · ${a.status||'—'}`}
-function sourceMeta(c,company){return{type:PROVIDER,provider:'Tradovate',companyId:company.id,companyName:company.name,importedAt:new Date().toISOString(),sourceAccounts:[...c.sourceAccounts],orderIds:[...c.sourceOrderIds],performanceFillIds:c.performance?[c.performance.buyFillId,c.performance.sellFillId].filter(Boolean):[],performanceValidated:Boolean(c.performance?.validated),fingerprint:c.fingerprint,timeZoneSource:'Asia/Riyadh',timeZoneAnalytics:'America/New_York'}}
+function sourceMeta(c,company){const type=c.sourceType||PROVIDER,provider=c.sourceProvider||'Tradovate';return{type,provider,sourceFormat:c.sourceFormat||(provider==='Tradovate'?'TRADOVATE_ORDERS':'CSV'),companyId:company.id,companyName:company.name,importedAt:new Date().toISOString(),sourceAccounts:c.sourceAccountMissing?[]:[...c.sourceAccounts],orderIds:[...c.sourceOrderIds],performanceFillIds:c.performance?[c.performance.buyFillId,c.performance.sellFillId].filter(Boolean):[],performanceValidated:Boolean(c.performance?.validated),fingerprint:c.fingerprint,timeZoneSource:c.timeZoneSource||'Asia/Riyadh',timeZoneAnalytics:'America/New_York',sourceGrossPnl:Number.isFinite(c.sourceGrossPnl)?c.sourceGrossPnl:undefined,sourceFees:Number.isFinite(c.sourceFees)?c.sourceFees:undefined,sourceNetPnl:Number.isFinite(c.sourceNetPnl)?c.sourceNetPnl:undefined,sourceCommissions:Number.isFinite(c.sourceCommissions)?c.sourceCommissions:undefined}}
 function buildAllocations(c,state,map){const internal=c.sourceAccounts.map(s=>map[s]).filter(Boolean);if(internal.length!==c.sourceAccounts.length)throw new Error(`حدد حساب Trading OS لكل Source Account في الصفقة ${c.instrument} ${c.direction}.`);const accounts=internal.map(id=>(state.accounts||[]).find(a=>a.id===id)).filter(Boolean);if(accounts.length!==internal.length)throw new Error('أحد الحسابات المرتبطة لم يعد موجودًا.');const cm=Object.fromEntries((state.companies||[]).map(x=>[x.id,x])),groups=new Map();for(const a of accounts){const k=[a.companyId,a.sizeK,a.stage].join('|');if(!groups.has(k))groups.set(k,{companyId:a.companyId,companyName:cm[a.companyId]?.name||a.companyId,sizeK:a.sizeK,stage:a.stage,accountIds:[],quantityMultiplier:1});groups.get(k).accountIds.push(a.id)}return[...groups.values()]}
-export function createTrade(c,state,map,company){const now=new Date().toISOString();return{id:nextTradeId(state,c.date),date:c.date,instrument:c.instrument,direction:c.direction,status:'Closed',targetPerAccount:0,bufferPoints:Number(state.settings?.defaultBufferPoints??1),stopMode:'POINTS',stopPrice:0,createdAt:now,closedAt:c.exitAt,actualEntryAt:c.entryAt,entryTimeSource:'TRADOVATE_CSV_RIYADH',actualExitAt:c.exitAt,exitTimeSource:'TRADOVATE_CSV_RIYADH',closeReason:'IMPORTED',manualReason:'TRADOVATE_CSV',allocations:buildAllocations(c,state,map),events:c.events.map(e=>({id:newId('EV'),type:e.type,timestamp:e.at,actualTimestamp:e.at,timeSource:'TRADOVATE_CSV_RIYADH',qtyPerAccount:e.qty,price:e.price,reason:e.type==='CLOSE'?'TRADOVATE_CSV':null,sourceOrderId:e.orderId})),notes:`Imported from ${company.name} Tradovate Orders.csv`,review:null,documentation:{version:1,charts:{entry:null,exit:null},importantNotes:[],chartAddenda:[],reviewAddenda:[]},importSource:sourceMeta(c,company)}}
+export function createTrade(c,state,map,company){const now=new Date().toISOString(),sourceType=c.sourceType||PROVIDER,provider=c.sourceProvider||'Tradovate',timeSource=sourceType==='TOPSTEP_TRADES_CSV'?'TOPSTEP_CSV_OFFSET':'TRADOVATE_CSV_RIYADH';const trade={id:nextTradeId(state,c.date),date:c.date,instrument:c.instrument,direction:c.direction,status:'Closed',targetPerAccount:0,bufferPoints:Number(state.settings?.defaultBufferPoints??1),stopMode:'POINTS',stopPrice:0,createdAt:now,closedAt:c.exitAt,actualEntryAt:c.entryAt,entryTimeSource:timeSource,actualExitAt:c.exitAt,exitTimeSource:timeSource,closeReason:'IMPORTED',manualReason:sourceType,allocations:buildAllocations(c,state,map),events:c.events.map(e=>({id:newId('EV'),type:e.type,timestamp:e.at,actualTimestamp:e.at,timeSource,qtyPerAccount:e.qty,price:e.price,reason:e.type==='CLOSE'?sourceType:null,sourceOrderId:e.orderId})),notes:`Imported from ${company.name} ${provider} CSV`,review:null,documentation:{version:1,charts:{entry:null,exit:null},importantNotes:[],chartAddenda:[],reviewAddenda:[]},importSource:sourceMeta(c,company)};if(Number.isFinite(c.feePerContractSide)&&c.feePerContractSide>0)trade.feePerContractSide=c.feePerContractSide;return trade}
 export function linkExisting(c,state,company){const t=(state.trades||[]).find(x=>x.id===c.match?.trade?.id);if(!t)throw new Error('تعذر العثور على الصفقة الموجودة للربط.');const p=t.importSource||{},m=sourceMeta(c,company);t.importSource={...p,...m,sourceAccounts:[...new Set([...(p.sourceAccounts||[]),...m.sourceAccounts])],orderIds:[...new Set([...(p.orderIds||[]),...m.orderIds])],performanceFillIds:[...new Set([...(p.performanceFillIds||[]),...m.performanceFillIds])]};return t}
 export function persistMappings(state,map,companyId){state.settings=state.settings||{};state.settings.tradovateAccountMap=state.settings.tradovateAccountMap||{};for(const [src,id] of Object.entries(map))if(id)state.settings.tradovateAccountMap[`${companyId}:${src}`]=id}
